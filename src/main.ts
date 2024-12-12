@@ -1,6 +1,7 @@
 import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { formatErrors } from './common/helpers/validation/format-errors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -8,15 +9,10 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true,
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false, // if set to 'true', throws error if the request body/
       exceptionFactory: (errors) => {
-        const result = errors.map((error) => {
-          return {
-            property: error.property,
-            message: error.constraints[Object.keys(error.constraints).at(-1)],
-          };
-        });
-        return new UnprocessableEntityException(result);
+        const formattedErrors = formatErrors(errors);
+        return new UnprocessableEntityException(formattedErrors);
       },
     }),
   );
