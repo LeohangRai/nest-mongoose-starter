@@ -15,11 +15,11 @@ export class UsersService {
   ) {}
 
   get() {
-    return this.userModel.find();
+    return this.userModel.find().populate('settings');
   }
 
   getUserById(id: string) {
-    return this.userModel.findById(id);
+    return this.userModel.findById(id).populate('settings');
   }
 
   async create({ settings: settingsData, ...userData }: CreateUserDto) {
@@ -33,7 +33,7 @@ export class UsersService {
       return newUser.save();
     }
     const newUser = new this.userModel(userData);
-    return newUser.save();
+    return (await newUser.save()).populate('settings');
   }
 
   async update(
@@ -60,16 +60,18 @@ export class UsersService {
         userSettingsId = newSetting.id;
       }
     }
-    return this.userModel.findByIdAndUpdate(
-      id,
-      {
-        ...userData,
-        settings: userSettingsId,
-      },
-      {
-        new: true,
-      },
-    );
+    return this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          ...userData,
+          settings: userSettingsId,
+        },
+        {
+          new: true,
+        },
+      )
+      .populate('settings');
   }
 
   delete(id: string) {
