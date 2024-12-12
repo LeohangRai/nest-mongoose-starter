@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,7 +6,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import mongoose from 'mongoose';
+import { ParseMongoObjectIdPipe } from 'src/common/pipes/parse-mongo-object-id.pipe';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UsersService } from './users.service';
 
@@ -21,13 +20,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  async getUserById(@Param('id') id: string) {
-    const isValidId = mongoose.Types.ObjectId.isValid(id);
-    if (!isValidId) {
-      throw new BadRequestException({
-        message: 'Validation failed (BSON Object ID is expected)',
-      });
-    }
+  async getUserById(@Param('id', ParseMongoObjectIdPipe) id: string) {
     const user = await this.usersService.getUserById(id);
     if (!user) {
       throw new NotFoundException({
