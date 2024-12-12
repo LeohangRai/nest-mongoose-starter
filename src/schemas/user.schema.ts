@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Gender } from 'src/common/enums/gender.enum';
 
 @Schema()
 export class User {
@@ -17,6 +18,11 @@ export class User {
     required: false,
   })
   profilePic?: string;
+
+  @Prop({
+    enum: Gender,
+  })
+  gender?: Gender;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
