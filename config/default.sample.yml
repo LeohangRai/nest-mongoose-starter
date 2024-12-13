@@ -1,2 +1,6 @@
 database:
   mongo_url:
+
+swagger:
+  user:
+  password:
