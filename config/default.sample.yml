@@ -1,6 +1,11 @@
+app:
+  port: # 3000 by default
+  env: # anything other than 'production' will be treated as 'development'
+
 database:
   mongo_url:
 
 swagger:
+  # basic swagger auth guard will be enabled if 'both' user and password are providedØ
   user:
   password:

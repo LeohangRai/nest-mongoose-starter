@@ -26,24 +26,28 @@ async function bootstrap() {
     }),
   );
 
-  /* set basic auth (prompt) for Swagger docs */
-  const swaggerUser = configService.get<string>('swagger.user');
-  const swaggerPassword = configService.get<string>('swagger.password');
-  if (swaggerUser && swaggerPassword) {
-    app.use(
-      [SWAGGER_URL],
-      basicAuth({
-        challenge: true,
-        users: { [swaggerUser]: swaggerPassword },
-      }),
-    );
+  const isDev = configService.get<string>('app.env') !== 'production';
+  if (isDev) {
+    /* set basic auth (prompt) for Swagger docs */
+    const swaggerUser = configService.get<string>('swagger.user');
+    const swaggerPassword = configService.get<string>('swagger.password');
+    if (swaggerUser && swaggerPassword) {
+      app.use(
+        [SWAGGER_URL],
+        basicAuth({
+          challenge: true,
+          users: { [swaggerUser]: swaggerPassword },
+        }),
+      );
+    }
+
+    /* enable Swagger docs */
+    const documentFactory = () =>
+      SwaggerModule.createDocument(app, SWAGGER_CONFIG);
+    SwaggerModule.setup(SWAGGER_URL, app, documentFactory);
   }
 
-  /* enable Swagger docs */
-  const documentFactory = () =>
-    SwaggerModule.createDocument(app, SWAGGER_CONFIG);
-  SwaggerModule.setup(SWAGGER_URL, app, documentFactory);
-
-  await app.listen(3000);
+  const port = configService.get<number>('app.port') || 3000;
+  await app.listen(port);
 }
 bootstrap();
