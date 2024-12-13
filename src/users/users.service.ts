@@ -5,6 +5,11 @@ import { UserSettings } from 'src/schemas/user-settings.schema';
 import { User } from 'src/schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { UPDATED_USER_PROJECTION } from './projections/updated-user.projection';
+import { USER_DETAILS_PROJECTION } from './projections/user-details.projection';
+import { USER_POSTS_PROJECTION } from './projections/user-posts.projection';
+import { USER_SETTINGS_PROJECTION } from './projections/user-settings.projection';
+import { USERS_LIST_PROJECTION } from './projections/users-list.projection';
 
 @Injectable()
 export class UsersService {
@@ -16,11 +21,14 @@ export class UsersService {
   ) {}
 
   get() {
-    return this.userModel.find().populate('settings');
+    return this.userModel.find({}, USERS_LIST_PROJECTION);
   }
 
   getUserById(id: string) {
-    return this.userModel.findById(id).populate('settings');
+    return this.userModel
+      .findById(id, USER_DETAILS_PROJECTION)
+      .populate('settings', USER_SETTINGS_PROJECTION)
+      .populate('posts', USER_POSTS_PROJECTION);
   }
 
   async create({ settings: settingsData, ...userData }: CreateUserDto) {
@@ -40,7 +48,10 @@ export class UsersService {
         }),
       });
       const savedUser = await userInstance.save({ session });
-      const userWithSettings = await savedUser.populate('settings');
+      const userWithSettings = await savedUser.populate(
+        'settings',
+        USER_SETTINGS_PROJECTION,
+      );
       await session.commitTransaction();
       await session.endSession();
       return userWithSettings;
@@ -88,10 +99,14 @@ export class UsersService {
           },
           {
             new: true,
+            projection: UPDATED_USER_PROJECTION,
           },
         )
         .session(session);
-      const updatedUserWithSettings = await updatedUser.populate('settings');
+      const updatedUserWithSettings = await updatedUser.populate(
+        'settings',
+        USER_SETTINGS_PROJECTION,
+      );
       await session.commitTransaction();
       await session.endSession();
       return updatedUserWithSettings;

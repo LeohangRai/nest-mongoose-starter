@@ -5,6 +5,7 @@ import { Post } from 'src/schemas/post.schema';
 import { User } from 'src/schemas/user.schema';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { POST_USER_PROJECTION } from './projections/post-user.projection';
 
 @Injectable()
 export class PostsService {
@@ -15,11 +16,11 @@ export class PostsService {
   ) {}
 
   get() {
-    return this.postModel.find().populate('user');
+    return this.postModel.find().populate('user', POST_USER_PROJECTION);
   }
 
   getPostById(id: string) {
-    return this.postModel.findById(id).populate('user');
+    return this.postModel.findById(id).populate('user', POST_USER_PROJECTION);
   }
 
   async create({ userId, ...postData }: CreatePostDto) {
@@ -47,7 +48,7 @@ export class PostsService {
           session,
         },
       );
-      const postWithUser = await newPost.populate('user');
+      const postWithUser = await newPost.populate('user', POST_USER_PROJECTION);
       await session.commitTransaction();
       await session.endSession();
       return postWithUser;
@@ -68,7 +69,7 @@ export class PostsService {
       });
     }
     const updatedPost = await this.postModel.findByIdAndUpdate(post._id, data);
-    return updatedPost.populate('user');
+    return updatedPost.populate('user', POST_USER_PROJECTION);
   }
 
   // TODO: Take userId to check if the post belongs to the current user (just find the post by the post ID and the provided user ID and throw 404 if not found)
