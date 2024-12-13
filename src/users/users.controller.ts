@@ -41,26 +41,16 @@ export class UsersController {
   }
 
   @Patch(':id')
-  async updateUser(
+  updateUser(
     @Param('id', ParseMongoObjectIdPipe) id: string,
     @Body() data: UpdateUserDto,
   ) {
-    const updatedUser = await this.usersService.update(id, data);
-    if (!updatedUser)
-      throw new NotFoundException({
-        message: 'There are no users with the provided ID',
-      });
-    return updatedUser;
+    return this.usersService.update(id, data);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('id', ParseMongoObjectIdPipe) id: string) {
-    const deletedUser = await this.usersService.delete(id);
-    if (!deletedUser) {
-      throw new NotFoundException({
-        message: 'There are no users with the provided ID',
-      });
-    }
+    return this.usersService.delete(id);
   }
 }

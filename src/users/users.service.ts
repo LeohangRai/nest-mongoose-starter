@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import mongoose, { Connection, Model } from 'mongoose';
 import { UserSettings } from 'src/schemas/user-settings.schema';
 import { User } from 'src/schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -12,6 +12,7 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(UserSettings.name)
     private userSettingsModel: Model<UserSettings>,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   get() {
@@ -23,17 +24,31 @@ export class UsersService {
   }
 
   async create({ settings: settingsData, ...userData }: CreateUserDto) {
-    if (settingsData) {
-      const settingsInstance = new this.userSettingsModel(settingsData);
-      const newSettings = await settingsInstance.save();
-      const newUser = new this.userModel({
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    let newSettingsId: mongoose.Types.ObjectId = null;
+    try {
+      if (settingsData) {
+        const settingsInstance = new this.userSettingsModel(settingsData);
+        const newSettings = await settingsInstance.save({ session });
+        newSettingsId = newSettings._id;
+      }
+      const userInstance = new this.userModel({
         ...userData,
-        settings: newSettings._id,
+        ...(newSettingsId && {
+          settings: newSettingsId,
+        }),
       });
-      return newUser.save();
+      const savedUser = await userInstance.save({ session });
+      const userWithSettings = await savedUser.populate('settings');
+      await session.commitTransaction();
+      await session.endSession();
+      return userWithSettings;
+    } catch (error) {
+      await session.abortTransaction();
+      await session.endSession();
+      throw error;
     }
-    const newUser = new this.userModel(userData);
-    return (await newUser.save()).populate('settings');
   }
 
   async update(
@@ -45,38 +60,74 @@ export class UsersService {
       throw new NotFoundException({
         message: 'There are no users with the provided ID',
       });
-    let userSettingsId = user.settings;
-    if (settingsData) {
-      if (user.settings) {
-        await this.userSettingsModel.findByIdAndUpdate(
-          user.settings,
-          settingsData,
+    let newUserSettingsId: mongoose.Types.ObjectId = null;
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    try {
+      if (settingsData) {
+        if (user.settings) {
+          await this.userSettingsModel
+            .findByIdAndUpdate(user.settings, settingsData, {
+              new: true,
+            })
+            .session(session);
+        } else {
+          const settingsInstance = new this.userSettingsModel(settingsData);
+          const newSettings = await settingsInstance.save({ session });
+          newUserSettingsId = newSettings._id;
+        }
+      }
+      const updatedUser = await this.userModel
+        .findByIdAndUpdate(
+          id,
+          {
+            ...userData,
+            ...(newUserSettingsId && {
+              settings: newUserSettingsId,
+            }),
+          },
           {
             new: true,
           },
-        );
-      } else {
-        const newSetting = await this.userSettingsModel.create(settingsData);
-        userSettingsId = newSetting.id;
-      }
+        )
+        .session(session);
+      const updatedUserWithSettings = await updatedUser.populate('settings');
+      await session.commitTransaction();
+      await session.endSession();
+      return updatedUserWithSettings;
+    } catch (error) {
+      await session.abortTransaction();
+      await session.endSession();
     }
-    return this.userModel
-      .findByIdAndUpdate(
-        id,
-        {
-          ...userData,
-          settings: userSettingsId,
-        },
-        {
-          new: true,
-        },
-      )
-      .populate('settings');
   }
 
-  delete(id: string) {
-    return this.userModel.findByIdAndDelete(id, {
-      new: true,
-    });
+  async delete(id: string) {
+    const user = await this.userModel.findById(id);
+    if (!user)
+      throw new NotFoundException({
+        message: 'There are no users with the provided ID',
+      });
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    try {
+      await this.userModel
+        .deleteOne({
+          _id: id,
+        })
+        .session(session);
+      if (user.settings) {
+        await this.userSettingsModel
+          .deleteOne({
+            _id: user.settings,
+          })
+          .session(session);
+      }
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
   }
 }
