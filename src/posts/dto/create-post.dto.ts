@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsOptional,
@@ -7,16 +8,19 @@ import {
 } from 'class-validator';
 
 export class CreatePostDto {
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   userId: string;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   @MinLength(5)
   @MaxLength(100)
   title: string;
 
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   @MaxLength(400)
