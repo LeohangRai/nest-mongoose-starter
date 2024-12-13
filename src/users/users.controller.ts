@@ -50,7 +50,7 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(@Param('id', ParseMongoObjectIdPipe) id: string) {
+  deleteUser(@Param('id', ParseMongoObjectIdPipe) id: string) {
     return this.usersService.delete(id);
   }
 }

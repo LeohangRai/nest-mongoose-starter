@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Gender } from 'src/common/enums/gender.enum';
+import { Post } from './post.schema';
 import { UserSettings } from './user-settings.schema';
 
 @Schema()
@@ -26,12 +27,18 @@ export class User {
   })
   gender?: Gender;
 
-  /* NOTE: This field will actually be populated with an ObjectID value which we can populate with an associated 'UserSettings' instance */
+  /* NOTE: This field will actually be hold an ObjectID value which we can populate with the associated 'UserSettings' document using the 'populate()' method */
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'UserSettings',
   })
   settings?: UserSettings;
+
+  /* NOTE: This field will actually be hold an array of ObjectIDs, which we can populate with the associated 'Post' documents using the 'populate()' method */
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+  })
+  posts: Post[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

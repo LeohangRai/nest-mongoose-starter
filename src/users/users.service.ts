@@ -98,9 +98,11 @@ export class UsersService {
     } catch (error) {
       await session.abortTransaction();
       await session.endSession();
+      throw error;
     }
   }
 
+  // TODO: delete all the associated posts as well
   async delete(id: string) {
     const user = await this.userModel.findById(id);
     if (!user)
