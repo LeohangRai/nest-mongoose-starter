@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import * as basicAuth from 'express-basic-auth';
+import mongoose from 'mongoose';
 import { AppModule } from './app.module';
 import {
   SWAGGER_CONFIG,
@@ -45,6 +46,9 @@ async function bootstrap() {
     const documentFactory = () =>
       SwaggerModule.createDocument(app, SWAGGER_CONFIG);
     SwaggerModule.setup(SWAGGER_URL, app, documentFactory);
+
+    /* enable mongoose logging */
+    mongoose.set('debug', { shell: true, color: true });
   }
 
   const port = configService.get<number>('app.port') || 3000;
