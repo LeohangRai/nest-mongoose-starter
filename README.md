@@ -32,6 +32,10 @@
 $ pnpm install
 ```
 
+## Configuration
+
+Create a `default.yml` config file inside of the `config` folder. As for the contents of the config file, you can take reference from the `config/default.sample.yml` file.
+
 ## Running the app
 
 ```bash
