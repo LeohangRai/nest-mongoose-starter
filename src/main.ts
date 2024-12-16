@@ -19,7 +19,10 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true,
       whitelist: true,
-      forbidNonWhitelisted: false, // if set to 'true', throws error if the request body/
+      forbidNonWhitelisted: false,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
       exceptionFactory: (errors) => {
         const formattedErrors = formatErrors(errors);
         return new UnprocessableEntityException(formattedErrors);
