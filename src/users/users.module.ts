@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { COLLECTION_NAMES } from 'src/schemas/consts';
+import { Post, PostSchema } from 'src/schemas/post.schema';
 import {
   UserSettings,
   UserSettingsSchema,
@@ -16,6 +17,11 @@ import { UsersService } from './users.service';
         name: User.name,
         schema: UserSchema,
         collection: COLLECTION_NAMES.USERS,
+      },
+      {
+        name: Post.name,
+        schema: PostSchema,
+        collection: COLLECTION_NAMES.POSTS,
       },
       {
         name: UserSettings.name,

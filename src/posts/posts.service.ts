@@ -6,6 +6,7 @@ import { User } from 'src/schemas/user.schema';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { POST_USER_PROJECTION } from './projections/post-user.projection';
+import { POSTS_LIST_PROJECTION } from './projections/posts-list.projection';
 
 @Injectable()
 export class PostsService {
@@ -16,7 +17,13 @@ export class PostsService {
   ) {}
 
   get() {
-    return this.postModel.find().populate('user', POST_USER_PROJECTION);
+    return this.postModel
+      .find({}, POSTS_LIST_PROJECTION, {
+        sort: {
+          createdAt: -1,
+        },
+      })
+      .populate('user', POST_USER_PROJECTION);
   }
 
   getPostById(id: string) {
@@ -50,10 +57,10 @@ export class PostsService {
       );
       const postWithUser = await newPost.populate('user', POST_USER_PROJECTION);
       await session.commitTransaction();
-      await session.endSession();
       return postWithUser;
     } catch (error) {
       await session.abortTransaction();
+    } finally {
       await session.endSession();
     }
   }

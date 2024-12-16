@@ -1,7 +1,6 @@
-import { ProjectionFieldsOf } from 'src/common/types/projection-fields-of';
-import { UserSettings } from 'src/schemas/user-settings.schema';
+import { UserSettingsModelProjection } from 'src/common/types/model.projection.types';
 
-export const USER_SETTINGS_PROJECTION: ProjectionFieldsOf<UserSettings> = {
+export const USER_SETTINGS_PROJECTION: UserSettingsModelProjection = {
   darkMode: true,
   receiveNotifications: true,
 };

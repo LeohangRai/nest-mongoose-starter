@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import mongoose, { Connection, Model } from 'mongoose';
+import { Post } from 'src/schemas/post.schema';
 import { UserSettings } from 'src/schemas/user-settings.schema';
 import { User } from 'src/schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -17,11 +18,17 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(UserSettings.name)
     private userSettingsModel: Model<UserSettings>,
+    @InjectModel(Post.name)
+    private postModel: Model<Post>,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
   get() {
-    return this.userModel.find({}, USERS_LIST_PROJECTION);
+    return this.userModel.find({}, USERS_LIST_PROJECTION, {
+      sort: {
+        createdAt: -1,
+      },
+    });
   }
 
   getUserById(id: string) {
@@ -53,12 +60,12 @@ export class UsersService {
         USER_SETTINGS_PROJECTION,
       );
       await session.commitTransaction();
-      await session.endSession();
       return userWithSettings;
     } catch (error) {
       await session.abortTransaction();
-      await session.endSession();
       throw error;
+    } finally {
+      await session.endSession();
     }
   }
 
@@ -108,16 +115,15 @@ export class UsersService {
         USER_SETTINGS_PROJECTION,
       );
       await session.commitTransaction();
-      await session.endSession();
       return updatedUserWithSettings;
     } catch (error) {
       await session.abortTransaction();
-      await session.endSession();
       throw error;
+    } finally {
+      await session.endSession();
     }
   }
 
-  // TODO: delete all the associated posts as well
   async delete(id: string) {
     const user = await this.userModel.findById(id);
     if (!user)
@@ -136,6 +142,15 @@ export class UsersService {
         await this.userSettingsModel
           .deleteOne({
             _id: user.settings,
+          })
+          .session(session);
+      }
+      if (user.posts?.length) {
+        await this.postModel
+          .deleteMany({
+            _id: {
+              $in: user.posts,
+            },
           })
           .session(session);
       }

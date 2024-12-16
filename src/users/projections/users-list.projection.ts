@@ -1,7 +1,6 @@
-import { ProjectionFieldsOf } from 'src/common/types/projection-fields-of';
-import { User } from 'src/schemas/user.schema';
+import { UserModelProjection } from 'src/common/types/model.projection.types';
 
-export const USERS_LIST_PROJECTION: ProjectionFieldsOf<User> = {
+export const USERS_LIST_PROJECTION: UserModelProjection = {
   username: true,
   email: true,
   gender: true,

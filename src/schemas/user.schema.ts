@@ -4,16 +4,19 @@ import { Gender } from 'src/common/enums/gender.enum';
 import { Post } from './post.schema';
 import { UserSettings } from './user-settings.schema';
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
   @Prop({
     unique: true,
     required: true,
+    trim: true,
   })
   username: string;
 
   @Prop({
     required: true,
+    trim: true,
+    lowercase: true,
   })
   email: string;
 
@@ -27,14 +30,14 @@ export class User {
   })
   gender?: Gender;
 
-  /* NOTE: This field will actually be hold an ObjectID value which we can populate with the associated 'UserSettings' document using the 'populate()' method */
+  /* NOTE: This field will actually hold an ObjectID value which we can populate with the associated 'UserSettings' document using the 'populate()' method */
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'UserSettings',
   })
   settings?: UserSettings;
 
-  /* NOTE: This field will actually be hold an array of ObjectIDs, which we can populate with the associated 'Post' documents using the 'populate()' method */
+  /* NOTE: This field will actually hold an array of ObjectIDs, which we can populate with the associated 'Post' documents using the 'populate()' method */
   @Prop({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   })

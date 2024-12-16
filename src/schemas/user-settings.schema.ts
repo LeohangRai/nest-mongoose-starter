@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class UserSettings {
   @Prop({ required: false, default: true })
   receiveNotifications?: boolean;
