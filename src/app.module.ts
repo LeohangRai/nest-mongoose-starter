@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { readFileSync } from 'fs';
 import { load as yamlLoad } from 'js-yaml';
-import { AppController } from './app/app.controller';
+import { AppController } from './app.controller';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 
