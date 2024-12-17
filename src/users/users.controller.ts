@@ -18,7 +18,7 @@ import { GetUsersQueryDto } from './dtos/get-users.query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UsersService } from './users.service';
 
-@ApiTags('users')
+@ApiTags('users (for admins)')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -41,7 +41,7 @@ export class UsersController {
 
   @Post()
   createUser(@Body() data: RegisterUserDto) {
-    return this.usersService.create(data);
+    return this.usersService.register(data);
   }
 
   @Patch(':id')

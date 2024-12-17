@@ -2,16 +2,26 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { plainToClass } from 'class-transformer';
 import mongoose, { Connection, Model, RootFilterQuery } from 'mongoose';
+import { LoginDto } from 'src/auth/dtos/login.dto';
 import { RegisterUserDto } from 'src/auth/dtos/register-user.dto';
+import { LoginResponse } from 'src/auth/serializers/login.response';
+import { UserProfileSerializer } from 'src/auth/serializers/user-profile.serializer';
 import {
   DEFAULT_QUERY_LIMIT,
   DEFAULT_QUERY_PAGE,
 } from 'src/common/dtos/query.dto';
 import { SortDirection } from 'src/common/enums/sort-direction.enum';
+import {
+  hashPassword,
+  isPasswordMatch,
+} from 'src/common/helpers/crypto/bcrypt.helper';
 import { ThrowableOptions } from 'src/common/types/throwable-opts';
 import { ValidationErrorMessage } from 'src/common/types/validation-error-message.type';
 import { getKeywordFilter } from 'src/common/utils/get-keyword-filter';
@@ -47,6 +57,7 @@ export class UsersService {
   private defaultSortDirection = SortDirection.DESCENDING;
 
   constructor(
+    private readonly jwtService: JwtService,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(UserSettings.name)
     private userSettingsModel: Model<UserSettings>,
@@ -54,6 +65,12 @@ export class UsersService {
     private postModel: Model<Post>,
     @InjectConnection() private readonly connection: Connection,
   ) {}
+
+  private serializeUserProfile(user: Partial<User>) {
+    return plainToClass(UserProfileSerializer, user, {
+      excludeExtraneousValues: true,
+    });
+  }
 
   validateSortByField(sortBy: string) {
     if (!sortBy) return;
@@ -125,11 +142,12 @@ export class UsersService {
       .lean();
   }
 
-  getUserProfile(id: string) {
-    return this.userModel
+  async getUserProfile(id: string) {
+    const userData = await this.userModel
       .findById(id, USER_PROFILE_PROJECTION)
       .populate('settings', USER_SETTINGS_PROJECTION)
       .lean();
+    return this.serializeUserProfile(userData);
   }
 
   private async isUsernameUnique(
@@ -175,7 +193,9 @@ export class UsersService {
     ]);
   }
 
-  async create({ settings: settingsData, ...userData }: RegisterUserDto) {
+  async register({ settings: settingsData, ...userData }: RegisterUserDto) {
+    const { username, email } = userData;
+    await this.checkWhetherUsernameAndEmailAreUnique(username, email);
     const session = await this.connection.startSession();
     session.startTransaction();
     let newSettingsId: mongoose.Types.ObjectId = null;
@@ -185,8 +205,10 @@ export class UsersService {
         const newSettings = await settingsInstance.save({ session });
         newSettingsId = newSettings._id;
       }
+      const { password } = userData;
       const userInstance = new this.userModel({
         ...userData,
+        password: hashPassword(password),
         ...(newSettingsId && {
           settings: newSettingsId,
         }),
@@ -197,13 +219,50 @@ export class UsersService {
         USER_SETTINGS_PROJECTION,
       );
       await session.commitTransaction();
-      return userWithSettings;
+      return this.serializeUserProfile(userWithSettings);
     } catch (error) {
       await session.abortTransaction();
       throw error;
     } finally {
       await session.endSession();
     }
+  }
+
+  async validateUserLoginDetails(username: string, inputPassword: string) {
+    const user = await this.findByUsername(username);
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid credentials',
+      });
+    }
+    const { password: originalPassword } = user;
+    if (!isPasswordMatch(inputPassword, originalPassword)) {
+      throw new UnauthorizedException({
+        message: 'Invalid credentials',
+      });
+    }
+    return user;
+  }
+
+  async login(loginPayload: LoginDto): Promise<LoginResponse> {
+    const { username: inputUsername, password: inputPassword } = loginPayload;
+    const user = await this.validateUserLoginDetails(
+      inputUsername,
+      inputPassword,
+    );
+    const { _id, username, email, gender, profilePic, status } = user;
+    const jwtPayload = { username, sub: _id };
+    const userData = {
+      username,
+      email,
+      gender,
+      profilePic,
+      status,
+    };
+    return {
+      access_token: this.jwtService.sign(jwtPayload),
+      data: userData,
+    };
   }
 
   async update(
