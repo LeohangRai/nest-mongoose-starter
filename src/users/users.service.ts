@@ -11,9 +11,14 @@ import {
 } from 'src/common/dtos/query.dto';
 import { SortDirection } from 'src/common/enums/sort-direction.enum';
 import { ValidationErrorMessage } from 'src/common/types/validation-error-message.type';
+import { getKeywordFilter } from 'src/common/utils/get-keyword-filter';
 import { Post } from 'src/schemas/post.schema';
 import { UserSettings } from 'src/schemas/user-settings.schema';
-import { User, UserModelSortFields } from 'src/schemas/user.schema';
+import {
+  User,
+  UserModelFields,
+  UserWithTimestamps,
+} from 'src/schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { GetUsersQueryDto } from './dtos/get-users.query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -27,14 +32,15 @@ import { USERS_LIST_PROJECTION } from './projections/users-list.projection';
 export class UsersService {
   private defaultQueryPage = DEFAULT_QUERY_PAGE;
   private defaultQueryLimit = DEFAULT_QUERY_LIMIT;
-  private sortableFields: UserModelSortFields[] = [
+  private keywordFilterFields: UserModelFields[] = ['username', 'email'];
+  private sortableFields: UserModelFields[] = [
     'createdAt',
     'updatedAt',
     'username',
     'email',
     'gender',
   ];
-  private defaultSortField: UserModelSortFields = 'createdAt';
+  private defaultSortField: UserModelFields = 'createdAt';
   private defaultSortDirection = SortDirection.DESCENDING;
 
   constructor(
@@ -48,7 +54,7 @@ export class UsersService {
 
   validateSortByField(sortBy: string) {
     if (!sortBy) return;
-    if (!this.sortableFields.includes(sortBy as UserModelSortFields)) {
+    if (!this.sortableFields.includes(sortBy as UserModelFields)) {
       const validationErrorObj: ValidationErrorMessage = {
         property: 'sortBy',
         message: `sortBy must be one of the following values: ${this.sortableFields.join(
@@ -76,25 +82,14 @@ export class UsersService {
         gender,
       };
     }
-    if (keyword) {
-      filter = {
-        ...filter,
-        $or: [
-          {
-            username: {
-              $regex: keyword,
-              $options: 'i',
-            },
-          },
-          {
-            email: {
-              $regex: keyword,
-              $options: 'i',
-            },
-          },
-        ],
-      };
-    }
+    const keywordFilter = getKeywordFilter<UserWithTimestamps>(
+      keyword,
+      this.keywordFilterFields,
+    );
+    filter = {
+      ...filter,
+      ...keywordFilter,
+    };
     return this.userModel
       .find(filter, USERS_LIST_PROJECTION, {
         skip,

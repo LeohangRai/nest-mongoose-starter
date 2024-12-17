@@ -26,6 +26,6 @@ export type PostWithTimestamps = Post & {
   updatedAt: Date;
 };
 
-export type PostModelSortFields = keyof PostWithTimestamps;
+export type PostModelFields = keyof PostWithTimestamps;
 
 export type PostModelProjection = ProjectionFieldsOf<PostWithTimestamps>;

@@ -52,6 +52,6 @@ export type UserWithTimestamps = User & {
   updatedAt: Date;
 };
 
-export type UserModelSortFields = keyof UserWithTimestamps;
+export type UserModelFields = keyof UserWithTimestamps;
 
 export type UserModelProjection = ProjectionFieldsOf<UserWithTimestamps>;

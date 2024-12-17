@@ -12,9 +12,10 @@ import {
 } from 'src/common/dtos/query.dto';
 import { SortDirection } from 'src/common/enums/sort-direction.enum';
 import { ValidationErrorMessage } from 'src/common/types/validation-error-message.type';
+import { getKeywordFilter } from 'src/common/utils/get-keyword-filter';
 import {
   Post,
-  PostModelSortFields,
+  PostModelFields,
   PostWithTimestamps,
 } from 'src/schemas/post.schema';
 import { User } from 'src/schemas/user.schema';
@@ -27,12 +28,13 @@ import { POSTS_LIST_PROJECTION } from './projections/posts-list.projection';
 export class PostsService {
   private defaultQueryPage = DEFAULT_QUERY_PAGE;
   private defaultQueryLimit = DEFAULT_QUERY_LIMIT;
-  private sortableFields: PostModelSortFields[] = [
+  private keywordFilterFields: PostModelFields[] = ['title'];
+  private sortableFields: PostModelFields[] = [
     'createdAt',
     'updatedAt',
     'title',
   ];
-  private defaultSortField: PostModelSortFields = 'createdAt';
+  private defaultSortField: PostModelFields = 'createdAt';
   private defaultSortDirection = SortDirection.DESCENDING;
 
   constructor(
@@ -43,7 +45,7 @@ export class PostsService {
 
   validateSortByField(sortBy: string) {
     if (!sortBy) return;
-    if (!this.sortableFields.includes(sortBy as PostModelSortFields)) {
+    if (!this.sortableFields.includes(sortBy as PostModelFields)) {
       const validationErrorObj: ValidationErrorMessage = {
         property: 'sortBy',
         message: `sortBy must be one of the following values: ${this.sortableFields.join(
@@ -65,18 +67,14 @@ export class PostsService {
     this.validateSortByField(sortBy);
     const skip = (page - 1) * limit;
     let filter: RootFilterQuery<Post> = {};
-    if (keyword) {
-      filter = {
-        $or: [
-          {
-            title: {
-              $regex: keyword,
-              $options: 'i',
-            },
-          },
-        ],
-      };
-    }
+    const keywordFilter = getKeywordFilter<PostWithTimestamps>(
+      keyword,
+      this.keywordFilterFields,
+    );
+    /* only keyword filter at the moment. may have to add other filters like 'userId' and 'status' later */
+    filter = {
+      ...keywordFilter,
+    };
     return this.postModel
       .find(filter, POSTS_LIST_PROJECTION, {
         skip,
