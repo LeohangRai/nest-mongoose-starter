@@ -1,4 +1,8 @@
-import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
+import {
+  Logger,
+  UnprocessableEntityException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
@@ -58,6 +62,9 @@ async function bootstrap() {
   }
 
   const port = configService.get<number>('app.port') || 3000;
-  await app.listen(port);
+  const logger = new Logger('NestApplication');
+  await app.listen(port, () => {
+    logger.log(`Server is up and running at http://localhost:${port}`);
+  });
 }
 bootstrap();
