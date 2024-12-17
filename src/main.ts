@@ -49,8 +49,11 @@ async function bootstrap() {
     const documentFactory = () =>
       SwaggerModule.createDocument(app, SWAGGER_CONFIG);
     SwaggerModule.setup(SWAGGER_URL, app, documentFactory);
+  }
 
-    /* enable mongoose logging */
+  /* enable/disable mongoose logging */
+  const isDbLoggingEnabled = configService.get<boolean>('database.logging');
+  if (isDbLoggingEnabled) {
     mongoose.set('debug', { shell: true, color: true });
   }
 
