@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { readFileSync } from 'fs';
 import { load as yamlLoad } from 'js-yaml';
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 
@@ -20,6 +21,7 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
     UsersModule,
     PostsModule,
   ],

@@ -4,6 +4,11 @@ app:
 
 database:
   mongo_url:
+  logging: # the value you provide will be typecasted to boolean (0, '', false will be treated as false)
+
+jwt:
+  secret:
+  expiresIn:
 
 swagger:
   # basic swagger auth guard will be enabled if 'both' user and password are providedØ

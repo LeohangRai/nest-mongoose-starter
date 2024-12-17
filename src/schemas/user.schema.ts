@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Gender } from 'src/common/enums/gender.enum';
+import { UserStatus } from 'src/common/enums/user-status.enum';
 import { ProjectionFieldsOf } from 'src/common/types/projection-fields-of';
 import { Post } from './post.schema';
 import { UserSettings } from './user-settings.schema';
@@ -31,6 +32,17 @@ export class User {
   })
   gender?: Gender;
 
+  @Prop({
+    required: true,
+  })
+  password: string;
+
+  @Prop({
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
+
   /* NOTE: This field will actually hold an ObjectID value which we can populate with the associated 'UserSettings' document using the 'populate()' method */
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
@@ -48,6 +60,7 @@ export class User {
 export const UserSchema = SchemaFactory.createForClass(User);
 
 export type UserWithTimestamps = User & {
+  _id: string | mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 };

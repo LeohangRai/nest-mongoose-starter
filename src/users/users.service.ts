@@ -1,15 +1,18 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import mongoose, { Connection, Model, RootFilterQuery } from 'mongoose';
+import { RegisterUserDto } from 'src/auth/dtos/register-user.dto';
 import {
   DEFAULT_QUERY_LIMIT,
   DEFAULT_QUERY_PAGE,
 } from 'src/common/dtos/query.dto';
 import { SortDirection } from 'src/common/enums/sort-direction.enum';
+import { ThrowableOptions } from 'src/common/types/throwable-opts';
 import { ValidationErrorMessage } from 'src/common/types/validation-error-message.type';
 import { getKeywordFilter } from 'src/common/utils/get-keyword-filter';
 import { Post } from 'src/schemas/post.schema';
@@ -19,12 +22,12 @@ import {
   UserModelFields,
   UserWithTimestamps,
 } from 'src/schemas/user.schema';
-import { CreateUserDto } from './dtos/create-user.dto';
 import { GetUsersQueryDto } from './dtos/get-users.query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UPDATED_USER_PROJECTION } from './projections/updated-user.projection';
 import { USER_DETAILS_PROJECTION } from './projections/user-details.projection';
 import { USER_POSTS_PROJECTION } from './projections/user-posts.projection';
+import { USER_PROFILE_PROJECTION } from './projections/user-profile.projection';
 import { USER_SETTINGS_PROJECTION } from './projections/user-settings.projection';
 import { USERS_LIST_PROJECTION } from './projections/users-list.projection';
 
@@ -107,7 +110,72 @@ export class UsersService {
       .populate('posts', USER_POSTS_PROJECTION);
   }
 
-  async create({ settings: settingsData, ...userData }: CreateUserDto) {
+  async findByUsername(username: string) {
+    return this.userModel
+      .findOne({
+        $or: [
+          {
+            username,
+          },
+          {
+            email: username,
+          },
+        ],
+      })
+      .lean();
+  }
+
+  getUserProfile(id: string) {
+    return this.userModel
+      .findById(id, USER_PROFILE_PROJECTION)
+      .populate('settings', USER_SETTINGS_PROJECTION)
+      .lean();
+  }
+
+  private async isUsernameUnique(
+    username: string,
+    userId?: string,
+    opts: ThrowableOptions = { shouldThrow: true },
+  ): Promise<boolean> {
+    const user = await this.userModel.findOne({
+      username,
+      ...(userId && { _id: { $ne: userId } }),
+    });
+    const result = !user;
+    if (!result && opts.shouldThrow) {
+      throw new BadRequestException({
+        message: 'Username already in use',
+      });
+    }
+    return result;
+  }
+
+  private async isEmailUnique(
+    email: string,
+    userId?: string,
+    opts: ThrowableOptions = { shouldThrow: true },
+  ): Promise<boolean> {
+    const user = await this.userModel.findOne({
+      email,
+      ...(userId && { _id: { $ne: userId } }),
+    });
+    const result = !user;
+    if (!result && opts.shouldThrow) {
+      throw new BadRequestException({
+        message: 'Email already in use',
+      });
+    }
+    return result;
+  }
+
+  async checkWhetherUsernameAndEmailAreUnique(username: string, email: string) {
+    return Promise.all([
+      this.isUsernameUnique(username),
+      this.isEmailUnique(email),
+    ]);
+  }
+
+  async create({ settings: settingsData, ...userData }: RegisterUserDto) {
     const session = await this.connection.startSession();
     session.startTransaction();
     let newSettingsId: mongoose.Types.ObjectId = null;

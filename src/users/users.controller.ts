@@ -12,8 +12,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { RegisterUserDto } from 'src/auth/dtos/register-user.dto';
 import { ParseMongoObjectIdPipe } from 'src/common/pipes/parse-mongo-object-id.pipe';
-import { CreateUserDto } from './dtos/create-user.dto';
 import { GetUsersQueryDto } from './dtos/get-users.query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UsersService } from './users.service';
@@ -40,7 +40,7 @@ export class UsersController {
   }
 
   @Post()
-  createUser(@Body() data: CreateUserDto) {
+  createUser(@Body() data: RegisterUserDto) {
     return this.usersService.create(data);
   }
 
