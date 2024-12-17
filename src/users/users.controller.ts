@@ -9,10 +9,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ParseMongoObjectIdPipe } from 'src/common/pipes/parse-mongo-object-id.pipe';
 import { CreateUserDto } from './dtos/create-user.dto';
+import { GetUsersQueryDto } from './dtos/get-users.query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UsersService } from './users.service';
 
@@ -22,8 +24,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  getUsers() {
-    return this.usersService.get();
+  getUsers(@Query() query: GetUsersQueryDto) {
+    return this.usersService.get(query);
   }
 
   @Get(':id')

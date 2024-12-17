@@ -1,4 +1,4 @@
-import { PostModelProjection } from 'src/common/types/model.projection.types';
+import { PostModelProjection } from 'src/schemas/post.schema';
 
 export const POSTS_LIST_PROJECTION: PostModelProjection = {
   title: true,

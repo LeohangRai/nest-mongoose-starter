@@ -1,7 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model } from 'mongoose';
-import { Post } from 'src/schemas/post.schema';
+import { Connection, Model, RootFilterQuery } from 'mongoose';
+import {
+  DEFAULT_QUERY_LIMIT,
+  DEFAULT_QUERY_PAGE,
+  KeywordPaginateAndSortQueryDto,
+} from 'src/common/dtos/query.dto';
+import { SortDirection } from 'src/common/enums/sort-direction.enum';
+import { ValidationErrorMessage } from 'src/common/types/validation-error-message.type';
+import {
+  Post,
+  PostModelSortFields,
+  PostWithTimestamps,
+} from 'src/schemas/post.schema';
 import { User } from 'src/schemas/user.schema';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -10,18 +25,65 @@ import { POSTS_LIST_PROJECTION } from './projections/posts-list.projection';
 
 @Injectable()
 export class PostsService {
+  private defaultQueryPage = DEFAULT_QUERY_PAGE;
+  private defaultQueryLimit = DEFAULT_QUERY_LIMIT;
+  private sortableFields: PostModelSortFields[] = [
+    'createdAt',
+    'updatedAt',
+    'title',
+  ];
+  private defaultSortField: PostModelSortFields = 'createdAt';
+  private defaultSortDirection = SortDirection.DESCENDING;
+
   constructor(
     @InjectModel(Post.name) private readonly postModel: Model<Post>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
-  get() {
+  validateSortByField(sortBy: string) {
+    if (!sortBy) return;
+    if (!this.sortableFields.includes(sortBy as PostModelSortFields)) {
+      const validationErrorObj: ValidationErrorMessage = {
+        property: 'sortBy',
+        message: `sortBy must be one of the following values: ${this.sortableFields.join(
+          ', ',
+        )}`,
+      };
+      throw new UnprocessableEntityException([validationErrorObj]);
+    }
+  }
+
+  get(query: KeywordPaginateAndSortQueryDto<PostWithTimestamps>) {
+    const {
+      keyword,
+      page = this.defaultQueryPage,
+      limit = this.defaultQueryLimit,
+      sortBy = this.defaultSortField,
+      sortDirection = this.defaultSortDirection,
+    } = query;
+    this.validateSortByField(sortBy);
+    const skip = (page - 1) * limit;
+    let filter: RootFilterQuery<Post> = {};
+    if (keyword) {
+      filter = {
+        $or: [
+          {
+            title: {
+              $regex: keyword,
+              $options: 'i',
+            },
+          },
+        ],
+      };
+    }
     return this.postModel
-      .find({}, POSTS_LIST_PROJECTION, {
-        sort: {
-          createdAt: -1,
-        },
+      .find(filter, POSTS_LIST_PROJECTION, {
+        skip,
+        limit,
+      })
+      .sort({
+        [sortBy]: sortDirection,
       })
       .populate('user', POST_USER_PROJECTION);
   }

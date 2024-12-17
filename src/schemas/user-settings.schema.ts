@@ -1,4 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { TimeStampsProjection } from 'src/common/types/common-projection.type';
+import { ProjectionFieldsOf } from 'src/common/types/projection-fields-of';
 
 @Schema({ timestamps: true })
 export class UserSettings {
@@ -10,3 +12,6 @@ export class UserSettings {
 }
 
 export const UserSettingsSchema = SchemaFactory.createForClass(UserSettings);
+
+export type UserSettingsModelProjection = ProjectionFieldsOf<UserSettings> &
+  TimeStampsProjection;

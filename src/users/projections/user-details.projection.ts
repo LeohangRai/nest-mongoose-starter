@@ -1,4 +1,4 @@
-import { UserModelProjection } from 'src/common/types/model.projection.types';
+import { UserModelProjection } from 'src/schemas/user.schema';
 
 export const USER_DETAILS_PROJECTION: UserModelProjection = {
   username: true,

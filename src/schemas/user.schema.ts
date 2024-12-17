@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Gender } from 'src/common/enums/gender.enum';
+import { ProjectionFieldsOf } from 'src/common/types/projection-fields-of';
 import { Post } from './post.schema';
 import { UserSettings } from './user-settings.schema';
 
@@ -45,3 +46,12 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+export type UserWithTimestamps = User & {
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type UserModelSortFields = keyof UserWithTimestamps;
+
+export type UserModelProjection = ProjectionFieldsOf<UserWithTimestamps>;

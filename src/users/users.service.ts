@@ -1,10 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import mongoose, { Connection, Model } from 'mongoose';
+import mongoose, { Connection, Model, RootFilterQuery } from 'mongoose';
+import {
+  DEFAULT_QUERY_LIMIT,
+  DEFAULT_QUERY_PAGE,
+} from 'src/common/dtos/query.dto';
+import { SortDirection } from 'src/common/enums/sort-direction.enum';
+import { ValidationErrorMessage } from 'src/common/types/validation-error-message.type';
 import { Post } from 'src/schemas/post.schema';
 import { UserSettings } from 'src/schemas/user-settings.schema';
-import { User } from 'src/schemas/user.schema';
+import { User, UserModelSortFields } from 'src/schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.dto';
+import { GetUsersQueryDto } from './dtos/get-users.query.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UPDATED_USER_PROJECTION } from './projections/updated-user.projection';
 import { USER_DETAILS_PROJECTION } from './projections/user-details.projection';
@@ -14,6 +25,18 @@ import { USERS_LIST_PROJECTION } from './projections/users-list.projection';
 
 @Injectable()
 export class UsersService {
+  private defaultQueryPage = DEFAULT_QUERY_PAGE;
+  private defaultQueryLimit = DEFAULT_QUERY_LIMIT;
+  private sortableFields: UserModelSortFields[] = [
+    'createdAt',
+    'updatedAt',
+    'username',
+    'email',
+    'gender',
+  ];
+  private defaultSortField: UserModelSortFields = 'createdAt';
+  private defaultSortDirection = SortDirection.DESCENDING;
+
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(UserSettings.name)
@@ -23,12 +46,63 @@ export class UsersService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
-  get() {
-    return this.userModel.find({}, USERS_LIST_PROJECTION, {
-      sort: {
-        createdAt: -1,
-      },
-    });
+  validateSortByField(sortBy: string) {
+    if (!sortBy) return;
+    if (!this.sortableFields.includes(sortBy as UserModelSortFields)) {
+      const validationErrorObj: ValidationErrorMessage = {
+        property: 'sortBy',
+        message: `sortBy must be one of the following values: ${this.sortableFields.join(
+          ', ',
+        )}`,
+      };
+      throw new UnprocessableEntityException([validationErrorObj]);
+    }
+  }
+
+  get(query: GetUsersQueryDto) {
+    const {
+      keyword,
+      gender,
+      page = this.defaultQueryPage,
+      limit = this.defaultQueryLimit,
+      sortBy = this.defaultSortField,
+      sortDirection = this.defaultSortDirection,
+    } = query;
+    this.validateSortByField(sortBy);
+    const skip = (page - 1) * limit;
+    let filter: RootFilterQuery<User> = {};
+    if (gender) {
+      filter = {
+        gender,
+      };
+    }
+    if (keyword) {
+      filter = {
+        ...filter,
+        $or: [
+          {
+            username: {
+              $regex: keyword,
+              $options: 'i',
+            },
+          },
+          {
+            email: {
+              $regex: keyword,
+              $options: 'i',
+            },
+          },
+        ],
+      };
+    }
+    return this.userModel
+      .find(filter, USERS_LIST_PROJECTION, {
+        skip,
+        limit,
+      })
+      .sort({
+        [sortBy]: sortDirection,
+      });
   }
 
   getUserById(id: string) {

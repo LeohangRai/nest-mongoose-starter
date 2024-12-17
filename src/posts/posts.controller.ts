@@ -9,9 +9,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { KeywordPaginateAndSortQueryDto } from 'src/common/dtos/query.dto';
 import { ParseMongoObjectIdPipe } from 'src/common/pipes/parse-mongo-object-id.pipe';
+import { Post as PostModel } from 'src/schemas/post.schema';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
@@ -21,8 +24,8 @@ import { PostsService } from './posts.service';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
   @Get()
-  getPosts() {
-    return this.postsService.get();
+  getPosts(@Query() query: KeywordPaginateAndSortQueryDto<PostModel>) {
+    return this.postsService.get(query);
   }
 
   @Get(':id')

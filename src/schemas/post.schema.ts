@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
+import { ProjectionFieldsOf } from 'src/common/types/projection-fields-of';
 import { User } from './user.schema';
 
 @Schema({ timestamps: true })
@@ -19,3 +20,12 @@ export class Post {
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+
+export type PostWithTimestamps = Post & {
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PostModelSortFields = keyof PostWithTimestamps;
+
+export type PostModelProjection = ProjectionFieldsOf<PostWithTimestamps>;
