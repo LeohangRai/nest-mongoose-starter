@@ -8,7 +8,7 @@ database:
 
 jwt:
   secret:
-  expiresIn:
+  expiresIn: # should be a number (in seconds)
 
 swagger:
   # basic swagger auth guard will be enabled if 'both' user and password are providedØ

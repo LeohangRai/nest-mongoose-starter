@@ -39,7 +39,7 @@ export class AuthService {
     const cookieExpiryDateTime = new Date();
     cookieExpiryDateTime.setMilliseconds(
       cookieExpiryDateTime.getTime() +
-        Number(this.configService.get<string>('jwt.expiresIn')) * 1000, // convert seconds to milliseconds
+        Number(this.configService.get<number>('jwt.expiresIn')) * 1000, // convert seconds to milliseconds
     );
     response.cookie('Authentication', accessToken, {
       httpOnly: true,
