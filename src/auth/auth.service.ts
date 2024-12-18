@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
+import { UserRole } from 'src/common/enums/user-role.enum';
 import { UsersService } from 'src/users/users.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
@@ -33,7 +34,7 @@ export class AuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { username, sub: _id };
+    const jwtPayload = { username, sub: _id, role: UserRole.USER };
     const accessToken = this.jwtService.sign(jwtPayload);
     const cookieExpiryDateTime = new Date();
     cookieExpiryDateTime.setMilliseconds(
@@ -64,7 +65,7 @@ export class AuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { username, sub: _id };
+    const jwtPayload = { username, sub: _id, role: UserRole.USER };
     const userData = {
       username,
       email,

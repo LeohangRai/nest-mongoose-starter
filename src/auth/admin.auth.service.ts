@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { AdminsService } from 'src/admins/admins.service';
+import { UserRole } from 'src/common/enums/user-role.enum';
 import { LoginDto } from './dtos/login.dto';
 import { AdminProfileSerializer } from './serializers/admin-profile.serializer';
 import {
@@ -28,7 +29,7 @@ export class AdminAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { username, sub: _id };
+    const jwtPayload = { username, sub: _id, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const cookieExpiryDateTime = new Date();
     cookieExpiryDateTime.setMilliseconds(
@@ -59,7 +60,7 @@ export class AdminAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { username, sub: _id };
+    const jwtPayload = { username, sub: _id, role: UserRole.ADMIN };
     const adminData = {
       username,
       email,

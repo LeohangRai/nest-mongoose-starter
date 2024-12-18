@@ -15,6 +15,7 @@ import {
   DEFAULT_QUERY_PAGE,
 } from 'src/common/dtos/query.dto';
 import { SortDirection } from 'src/common/enums/sort-direction.enum';
+import { UserStatus } from 'src/common/enums/user-status.enum';
 import {
   hashPassword,
   isPasswordMatch,
@@ -121,6 +122,26 @@ export class UsersService {
       .findById(id, USER_DETAILS_PROJECTION)
       .populate('settings', USER_SETTINGS_PROJECTION)
       .populate('posts', USER_POSTS_PROJECTION);
+  }
+
+  /* currently being used by the jwt.strategy validate() method */
+  async validateUserId(id: string): Promise<boolean> {
+    const user = await this.userModel
+      .findById(id, { _id: true, status: true })
+      .lean();
+    if (!user) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Invalid credential',
+      });
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Account not active. Current status: ' + user.status,
+      });
+    }
+    return true;
   }
 
   async findByUsername(username: string) {

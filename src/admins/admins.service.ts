@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { plainToClass } from 'class-transformer';
 import { Model } from 'mongoose';
 import { AdminProfileSerializer } from 'src/auth/serializers/admin-profile.serializer';
+import { AdminStatus } from 'src/common/enums/user-status.enum';
 import { isPasswordMatch } from 'src/common/helpers/crypto/bcrypt.helper';
 import { Admin } from 'src/schemas/admin.schema';
 import { ADMIN_PROFILE_PROJECTION } from './projections/admin-profile.projection';
@@ -12,6 +13,26 @@ export class AdminsService {
   constructor(
     @InjectModel(Admin.name) private readonly adminModel: Model<Admin>,
   ) {}
+
+  /* currently being used by the jwt.strategy validate() method */
+  async validateAdminId(id: string): Promise<boolean> {
+    const admin = await this.adminModel
+      .findById(id, { _id: true, status: true })
+      .lean();
+    if (!admin) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Invalid credential',
+      });
+    }
+    if (admin.status !== AdminStatus.ACTIVE) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Account not active. Current status: ' + admin.status,
+      });
+    }
+    return true;
+  }
 
   private serializeProfile(admin: Partial<Admin>) {
     return plainToClass(AdminProfileSerializer, admin, {
