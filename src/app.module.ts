@@ -17,7 +17,7 @@ import { UsersModule } from './users/users.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('database.mongo_url'),
+        uri: configService.getOrThrow<string>('database.mongo_url'),
       }),
       inject: [ConfigService],
     }),
