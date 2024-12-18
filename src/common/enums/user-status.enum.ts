@@ -4,3 +4,5 @@ export enum UserStatus {
   BLOCKED = 'blocked',
   DELETED = 'deleted',
 }
+
+export { UserStatus as AdminStatus };
