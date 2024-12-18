@@ -57,6 +57,14 @@ export class RBACGuard implements CanActivate {
 
     const { user }: { user: RequestUser } = context.switchToHttp().getRequest();
     if (!user) return false;
+
+    /* skip the role check if the route handler method or controller class has been marked to ignore role check */
+    const ignoreRoleCheck = this.reflector.getAllAndOverride<boolean>(
+      RBACKey.IGNORE_ROLE_CHECK,
+      this.contextHandlerAndClass,
+    );
+    if (ignoreRoleCheck) return true;
+
     this.validateUserRole(user);
     return true;
   }
