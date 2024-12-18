@@ -5,13 +5,10 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { plainToClass } from 'class-transformer';
 import mongoose, { Connection, Model, RootFilterQuery } from 'mongoose';
-import { LoginDto } from 'src/auth/dtos/login.dto';
 import { RegisterUserDto } from 'src/auth/dtos/register-user.dto';
-import { LoginResponse } from 'src/auth/serializers/login.response';
 import { UserProfileSerializer } from 'src/auth/serializers/user-profile.serializer';
 import {
   DEFAULT_QUERY_LIMIT,
@@ -57,7 +54,6 @@ export class UsersService {
   private defaultSortDirection = SortDirection.DESCENDING;
 
   constructor(
-    private readonly jwtService: JwtService,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(UserSettings.name)
     private userSettingsModel: Model<UserSettings>,
@@ -242,27 +238,6 @@ export class UsersService {
       });
     }
     return user;
-  }
-
-  async login(loginPayload: LoginDto): Promise<LoginResponse> {
-    const { username: inputUsername, password: inputPassword } = loginPayload;
-    const user = await this.validateUserLoginDetails(
-      inputUsername,
-      inputPassword,
-    );
-    const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { username, sub: _id };
-    const userData = {
-      username,
-      email,
-      gender,
-      profilePic,
-      status,
-    };
-    return {
-      access_token: this.jwtService.sign(jwtPayload),
-      data: userData,
-    };
   }
 
   async update(

@@ -1,8 +1,7 @@
 import { Gender } from 'src/common/enums/gender.enum';
 import { UserStatus } from 'src/common/enums/user-status.enum';
 
-export interface LoginResponse {
-  access_token: string;
+export type WebLoginResponse = {
   data: {
     username: string;
     email: string;
@@ -10,4 +9,8 @@ export interface LoginResponse {
     profilePic: string;
     status: UserStatus;
   };
-}
+};
+
+export type MobileLoginResponse = WebLoginResponse & {
+  access_token: string;
+};
