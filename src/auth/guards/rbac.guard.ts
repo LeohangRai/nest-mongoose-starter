@@ -47,6 +47,14 @@ export class RBACGuard implements CanActivate {
       NOTE: If you want to prioritize controller level decorator metadata over route handler level, change the order to [context.getClass(), context.getHandler()]
     */
     this.contextHandlerAndClass = [context.getHandler(), context.getClass()];
+
+    /* skip the role check if the route handler method or controller class has been marked as public */
+    const isPublicApi = this.reflector.getAllAndOverride<boolean>(
+      RBACKey.IS_PUBLIC_API,
+      this.contextHandlerAndClass,
+    );
+    if (isPublicApi) return true;
+
     const { user }: { user: RequestUser } = context.switchToHttp().getRequest();
     if (!user) return false;
     this.validateUserRole(user);

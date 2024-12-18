@@ -1,3 +1,4 @@
 export enum RBACKey {
   ALLOWED_ROLES = 'ALLOWED_ROLES',
+  IS_PUBLIC_API = 'IS_PUBLIC_API',
 }
