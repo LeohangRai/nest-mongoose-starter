@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { UserRole } from 'src/common/enums/user-role.enum';
+import { UserRefreshTokensService } from 'src/refresh-tokens/services/user.refresh-tokens.service';
+import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
 import { UsersService } from 'src/users/users.service';
+import { AbstractAuthService } from './abstract.auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
 import { UserProfileSerializer } from './serializers/user-profile.serializer';
@@ -13,12 +16,15 @@ import {
 } from './types/login.response.type';
 
 @Injectable()
-export class AuthService {
+export class AuthService extends AbstractAuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    protected readonly configService: ConfigService,
     private readonly userService: UsersService,
-  ) {}
+    private readonly userRefreshTokenService: UserRefreshTokensService,
+  ) {
+    super(configService);
+  }
 
   async register(userData: RegisterUserDto): Promise<UserProfileSerializer> {
     return this.userService.register(userData);
@@ -26,6 +32,7 @@ export class AuthService {
 
   async webLogin(
     loginPayload: LoginDto,
+    uaPayload: UAPayload,
     response: Response,
   ): Promise<WebLoginResponse> {
     const { username: inputUsername, password: inputPassword } = loginPayload;
@@ -36,16 +43,14 @@ export class AuthService {
     const { _id, username, email, gender, profilePic, status } = user;
     const jwtPayload = { username, sub: _id, role: UserRole.USER };
     const accessToken = this.jwtService.sign(jwtPayload);
-    const cookieExpiryDateTime = new Date();
-    cookieExpiryDateTime.setMilliseconds(
-      cookieExpiryDateTime.getTime() +
-        Number(this.configService.get<number>('jwt.expiresIn')) * 1000, // convert seconds to milliseconds
-    );
-    response.cookie('Authentication', accessToken, {
-      httpOnly: true,
-      secure: this.configService.get('app.env') === 'production',
-      expires: cookieExpiryDateTime,
-    });
+    const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
+    const refreshToken =
+      await this.userRefreshTokenService.generateRefreshToken({
+        ...uaPayload,
+        user: _id.toHexString(),
+        expiresAt: refreshCookieExpiryDateTime,
+      });
+    this.setAuthCookies({ accessToken, refreshToken }, response);
     const userData = {
       username,
       email,
@@ -58,7 +63,10 @@ export class AuthService {
     };
   }
 
-  async mobileLogin(loginPayload: LoginDto): Promise<MobileLoginResponse> {
+  async mobileLogin(
+    loginPayload: LoginDto,
+    uaPayload: UAPayload,
+  ): Promise<MobileLoginResponse> {
     const { username: inputUsername, password: inputPassword } = loginPayload;
     const user = await this.userService.validateUserLoginDetails(
       inputUsername,
@@ -66,6 +74,13 @@ export class AuthService {
     );
     const { _id, username, email, gender, profilePic, status } = user;
     const jwtPayload = { username, sub: _id, role: UserRole.USER };
+    const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
+    const refreshToken =
+      await this.userRefreshTokenService.generateRefreshToken({
+        ...uaPayload,
+        user: _id.toHexString(),
+        expiresAt: refreshCookieExpiryDateTime,
+      });
     const userData = {
       username,
       email,
@@ -74,12 +89,13 @@ export class AuthService {
       status,
     };
     return {
-      access_token: this.jwtService.sign(jwtPayload),
+      refreshToken,
+      accessToken: this.jwtService.sign(jwtPayload),
       data: userData,
     };
   }
 
-  async getUserProfile(id: string): Promise<UserProfileSerializer> {
+  async getProfile(id: string): Promise<UserProfileSerializer> {
     return this.userService.getUserProfile(id);
   }
 }

@@ -8,6 +8,7 @@ import { UserRole } from 'src/common/enums/user-role.enum';
 import { JWTPayload } from 'src/common/types/jwt-payload.type';
 import { RequestUser } from 'src/common/types/request-user.type';
 import { UsersService } from 'src/users/users.service';
+import { CookieKey } from '../enums/cookie-key.enum';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -19,11 +20,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       /* 
         extract JWT from either:
-        - cookie named 'Authentication' (for web)
+        - cookie named 'AccessToken' (for web)
         - Authorization header with Bearer token (for mobile)
       */
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => request.cookies?.Authentication,
+        (request: Request) => request.cookies?.[CookieKey.AccessToken],
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,

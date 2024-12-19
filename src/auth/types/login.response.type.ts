@@ -12,5 +12,6 @@ export type WebLoginResponse = {
 };
 
 export type MobileLoginResponse = WebLoginResponse & {
-  access_token: string;
+  refreshToken: string;
+  accessToken: string;
 };

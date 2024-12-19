@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AdminsModule } from 'src/admins/admins.module';
+import { RefreshTokensModule } from 'src/refresh-tokens/refresh-tokens.module';
 import { UsersModule } from 'src/users/users.module';
 import { AdminAuthController } from './admin.auth.controller';
 import { AdminAuthService } from './admin.auth.service';
@@ -24,6 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
     AdminsModule,
     UsersModule,
+    RefreshTokensModule,
   ],
 })
 export class AuthModule {}

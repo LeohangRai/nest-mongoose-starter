@@ -7,6 +7,7 @@ import { AdminsModule } from './admins/admins.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { PostsModule } from './posts/posts.module';
+import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module';
       inject: [ConfigService],
     }),
     AuthModule,
+    RefreshTokensModule,
     UsersModule,
     PostsModule,
     AdminsModule,

@@ -1,9 +1,18 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { UserRole } from 'src/common/enums/user-role.enum';
 import { RequestUser } from 'src/common/types/request-user.type';
+import { AbstractAuthController } from './abstract.auth.controller';
 import { AdminAuthService } from './admin.auth.service';
 import { AllowRoles } from './decorators/allow-roles.decorator';
 import { LoginDto } from './dtos/login.dto';
@@ -17,20 +26,28 @@ import {
 
 @ApiTags('auth (admin)')
 @Controller('auth/admin')
-export class AdminAuthController {
-  constructor(private readonly adminAuthService: AdminAuthService) {}
+export class AdminAuthController extends AbstractAuthController {
+  constructor(private readonly adminAuthService: AdminAuthService) {
+    super();
+  }
 
   @Post('login/web')
   async webLogin(
     @Body() loginData: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<WebLoginResponse> {
-    return this.adminAuthService.webLogin(loginData, res);
+    const uaPayload = this.getUaPayload(req);
+    return this.adminAuthService.webLogin(loginData, uaPayload, res);
   }
 
   @Post('login/mobile')
-  async mobileLogin(@Body() loginData: LoginDto): Promise<MobileLoginResponse> {
-    return this.adminAuthService.mobileLogin(loginData);
+  async mobileLogin(
+    @Body() loginData: LoginDto,
+    @Req() req: Request,
+  ): Promise<MobileLoginResponse> {
+    const uaPayload = this.getUaPayload(req);
+    return this.adminAuthService.mobileLogin(loginData, uaPayload);
   }
 
   @ApiBearerAuth()
