@@ -96,6 +96,24 @@ export class UserAuthController extends AbstractAuthController {
     );
   }
 
+  @Post('logout/web')
+  @UseGuards(JwtRefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logoutWeb(
+    @GetUser() user: RefreshRequestUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.userAuthService.logoutWeb(user.refreshTokenId, res);
+  }
+
+  @Post('logout/mobile')
+  @ApiRefreshTokenHeader()
+  @UseGuards(JwtRefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logoutMobile(@GetUser() user: RefreshRequestUser) {
+    return this.userAuthService.logoutMobile(user.refreshTokenId);
+  }
+
   @Get('profile')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RBACGuard)

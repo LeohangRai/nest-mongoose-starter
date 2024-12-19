@@ -9,6 +9,7 @@ import { AdminProfileSerializer } from '../serializers/admin-profile.serializer'
 import { UserProfileSerializer } from '../serializers/user-profile.serializer';
 import {
   MobileLoginResponse,
+  MobileRefreshResponse,
   WebLoginResponse,
 } from '../types/login.response.type';
 
@@ -50,6 +51,52 @@ export abstract class AbstractAuthService {
     loginPayload: LoginDto,
     uaPayload: UAPayload,
   ): Promise<MobileLoginResponse>;
+
+  /**
+   * handle web refresh process
+   * @param refreshTokenId - ID of the refresh token
+   * @param userId - ID of the user
+   * @param uaPayload - User agent information
+   * @param response - Express response object
+   * @returns A promise that resolves to void, or void itself.
+   */
+  abstract refreshWeb(
+    refreshTokenId: string,
+    userId: string,
+    uaPayload: UAPayload,
+    response: Response,
+  ): Promise<void> | void;
+
+  /**
+   * handle mobile refresh process
+   * @param refreshTokenId - ID of the refresh token
+   * @param userId - ID of the user
+   * @param uaPayload - User agent information
+   * @returns Promise<MobileRefreshResponse>
+   */
+  abstract refreshMobile(
+    refreshTokenId: string,
+    userId: string,
+    uaPayload: UAPayload,
+  ): Promise<MobileRefreshResponse>;
+
+  /**
+   * handle web logout process
+   * @param refreshTokenId - ID of the refresh token
+   * @param response - Express response object
+   * @returns A promise that resolves to void, or void itself.
+   */
+  abstract logoutWeb(
+    refreshTokenId: string,
+    response: Response,
+  ): Promise<void> | void;
+
+  /**
+   * handle mobile logout process
+   * @param refreshTokenId - ID of the refresh token
+   * @returns A promise that resolves to void, or void itself.
+   */
+  abstract logoutMobile(refreshTokenId: string): Promise<void> | void;
 
   /**
    * get the profile of a user/admin
@@ -113,5 +160,14 @@ export abstract class AbstractAuthService {
       path: this.cookieConfig.refreshTokenPath || this.cookieConfig.path,
       expires: refreshCookieExpiryDateTime,
     });
+  }
+
+  /**
+   * clear the authentication cookies (access and refresh tokens) from the response object
+   * @param response - Express response object
+   */
+  protected clearAuthCookies(response: Response): void {
+    response.clearCookie(CookieKey.AccessToken);
+    response.clearCookie(CookieKey.RefreshToken);
   }
 }

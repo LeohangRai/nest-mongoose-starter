@@ -11,6 +11,7 @@ export const DEFAULT_COOKIE_OPTIONS: CustomCookieOptions = {
   /*
     for refresh token cookie
     make sure to override this in the auth service classes with the correspoding refresh API endpoint route path
+    Example: '/auth' for the user auth service and '/auth/admin' for the admin auth service
   */
-  refreshTokenPath: '/',
+  refreshTokenPath: '/auth',
 };

@@ -88,6 +88,24 @@ export class AdminAuthController extends AbstractAuthController {
     );
   }
 
+  @Post('logout/web')
+  @UseGuards(JwtRefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logoutWeb(
+    @GetUser() user: RefreshRequestUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.adminAuthService.logoutWeb(user.refreshTokenId, res);
+  }
+
+  @Post('logout/mobile')
+  @ApiRefreshTokenHeader()
+  @UseGuards(JwtRefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logoutMobile(@GetUser() user: RefreshRequestUser) {
+    return this.adminAuthService.logoutMobile(user.refreshTokenId);
+  }
+
   @Get('profile')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RBACGuard)

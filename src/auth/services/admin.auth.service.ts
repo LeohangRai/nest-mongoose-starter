@@ -11,6 +11,7 @@ import { LoginDto } from '../dtos/login.dto';
 import { AdminProfileSerializer } from '../serializers/admin-profile.serializer';
 import {
   MobileLoginResponse,
+  MobileRefreshResponse,
   WebLoginResponse,
 } from '../types/login.response.type';
 import { AbstractAuthService } from './abstract.auth.service';
@@ -24,7 +25,7 @@ export class AdminAuthService extends AbstractAuthService {
     private readonly adminRefreshTokenService: AdminRefreshTokensService,
   ) {
     super(configService, {
-      refreshTokenPath: '/auth/admin/refresh',
+      refreshTokenPath: '/auth/admin',
     });
   }
 
@@ -124,7 +125,7 @@ export class AdminAuthService extends AbstractAuthService {
     refreshTokenId: string,
     userId: string,
     uaPayload: UAPayload,
-  ) {
+  ): Promise<MobileRefreshResponse> {
     const jwtPayload: SignJWTInput = { sub: userId, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
@@ -141,6 +142,21 @@ export class AdminAuthService extends AbstractAuthService {
       refreshToken,
       accessToken,
     };
+  }
+
+  async logoutWeb(refreshTokenId: string, response: Response): Promise<void> {
+    try {
+      await this.adminRefreshTokenService.revokeRefreshToken(refreshTokenId);
+    } catch (error) {
+      throw error;
+    } finally {
+      /* clear the cookies even if the revokeRefreshToken() operation fails */
+      this.clearAuthCookies(response);
+    }
+  }
+
+  logoutMobile(refreshTokenId: string): Promise<void> {
+    return this.adminRefreshTokenService.revokeRefreshToken(refreshTokenId);
   }
 
   async getProfile(id: string): Promise<AdminProfileSerializer> {

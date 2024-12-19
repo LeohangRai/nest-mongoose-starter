@@ -12,6 +12,7 @@ import { RegisterUserDto } from '../dtos/register-user.dto';
 import { UserProfileSerializer } from '../serializers/user-profile.serializer';
 import {
   MobileLoginResponse,
+  MobileRefreshResponse,
   WebLoginResponse,
 } from '../types/login.response.type';
 import { AbstractAuthService } from './abstract.auth.service';
@@ -25,7 +26,7 @@ export class UserAuthService extends AbstractAuthService {
     private readonly userRefreshTokenService: UserRefreshTokensService,
   ) {
     super(configService, {
-      refreshTokenPath: '/auth/refresh',
+      refreshTokenPath: '/auth',
     });
   }
 
@@ -130,7 +131,7 @@ export class UserAuthService extends AbstractAuthService {
     refreshTokenId: string,
     userId: string,
     uaPayload: UAPayload,
-  ) {
+  ): Promise<MobileRefreshResponse> {
     const jwtPayload: SignJWTInput = { sub: userId, role: UserRole.USER };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
@@ -147,6 +148,21 @@ export class UserAuthService extends AbstractAuthService {
       refreshToken,
       accessToken,
     };
+  }
+
+  async logoutWeb(refreshTokenId: string, response: Response): Promise<void> {
+    try {
+      await this.userRefreshTokenService.revokeRefreshToken(refreshTokenId);
+    } catch (error) {
+      throw error;
+    } finally {
+      /* clear the cookies even if the revokeRefreshToken() operation fails */
+      this.clearAuthCookies(response);
+    }
+  }
+
+  logoutMobile(refreshTokenId: string): Promise<void> {
+    return this.userRefreshTokenService.revokeRefreshToken(refreshTokenId);
   }
 
   async getProfile(id: string): Promise<UserProfileSerializer> {

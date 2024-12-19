@@ -72,6 +72,24 @@ export abstract class AbstractAuthController {
   ): Promise<MobileRefreshResponse>;
 
   /**
+   * handle web logout process.
+   * @param user - The user data contained in the JWT refresh token.
+   * @param res - The Express response object to be used for sending the response.
+   * @returns A promise that resolves to void, or void itself.
+   */
+  abstract logoutWeb(
+    user: RefreshRequestUser,
+    res: Response,
+  ): Promise<void> | void;
+
+  /**
+   * handle mobile logout process.
+   * @param user - The user data contained in the JWT refresh token.
+   * @returns A promise that resolves to void, or void itself.
+   */
+  abstract logoutMobile(user: RefreshRequestUser): Promise<void> | void;
+
+  /**
    * get the profile of a user.
    * @param user - The user data contained in the JWT access token.
    * @returns A promise that resolves to a AdminProfileSerializer or UserProfileSerializer, depending on the user's role.
