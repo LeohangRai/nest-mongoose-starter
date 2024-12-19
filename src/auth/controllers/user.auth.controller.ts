@@ -16,25 +16,25 @@ import { ApiRefreshTokenHeader } from 'src/common/decorators/swagger/api.refresh
 import { UserRole } from 'src/common/enums/user-role.enum';
 import { RefreshRequestUser } from 'src/common/types/refresh-request-user.type';
 import { RequestUser } from 'src/common/types/request-user.type';
-import { AbstractAuthController } from './abstract.auth.controller';
-import { AuthService } from './auth.service';
-import { AllowRoles } from './decorators/allow-roles.decorator';
-import { LoginDto } from './dtos/login.dto';
-import { RegisterUserDto } from './dtos/register-user.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { JwtRefreshAuthGuard } from './guards/jwt-refresh.auth.guard';
-import { RBACGuard } from './guards/rbac.guard';
-import { UserProfileSerializer } from './serializers/user-profile.serializer';
+import { AllowRoles } from '../decorators/allow-roles.decorator';
+import { LoginDto } from '../dtos/login.dto';
+import { RegisterUserDto } from '../dtos/register-user.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtRefreshAuthGuard } from '../guards/jwt-refresh.auth.guard';
+import { RBACGuard } from '../guards/rbac.guard';
+import { UserProfileSerializer } from '../serializers/user-profile.serializer';
+import { UserAuthService } from '../services/user.auth.service';
 import {
   MobileLoginResponse,
   MobileRefreshResponse,
   WebLoginResponse,
-} from './types/login.response.type';
+} from '../types/login.response.type';
+import { AbstractAuthController } from './abstract.auth.controller';
 
 @ApiTags('auth (users)')
 @Controller('auth')
-export class AuthController extends AbstractAuthController {
-  constructor(private readonly authService: AuthService) {
+export class UserAuthController extends AbstractAuthController {
+  constructor(private readonly userAuthService: UserAuthService) {
     super();
   }
 
@@ -42,7 +42,7 @@ export class AuthController extends AbstractAuthController {
   async register(
     @Body() userData: RegisterUserDto,
   ): Promise<UserProfileSerializer> {
-    return this.authService.register(userData);
+    return this.userAuthService.register(userData);
   }
 
   @Post('login/web')
@@ -52,7 +52,7 @@ export class AuthController extends AbstractAuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<WebLoginResponse> {
     const uaPayload = this.getUaPayload(req);
-    return this.authService.webLogin(loginData, uaPayload, res);
+    return this.userAuthService.webLogin(loginData, uaPayload, res);
   }
 
   @Post('login/mobile')
@@ -61,12 +61,11 @@ export class AuthController extends AbstractAuthController {
     @Req() req: Request,
   ): Promise<MobileLoginResponse> {
     const uaPayload = this.getUaPayload(req);
-    return this.authService.mobileLogin(loginData, uaPayload);
+    return this.userAuthService.mobileLogin(loginData, uaPayload);
   }
 
   @Post('/refresh/web')
-  @UseGuards(JwtRefreshAuthGuard, RBACGuard)
-  @AllowRoles(UserRole.USER)
+  @UseGuards(JwtRefreshAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async refreshWeb(
     @GetUser() user: RefreshRequestUser,
@@ -74,7 +73,7 @@ export class AuthController extends AbstractAuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const uaPayload = this.getUaPayload(req);
-    return this.authService.refreshWeb(
+    return this.userAuthService.refreshWeb(
       user.refreshTokenId,
       user.userId,
       uaPayload,
@@ -84,14 +83,13 @@ export class AuthController extends AbstractAuthController {
 
   @Post('/refresh/mobile')
   @ApiRefreshTokenHeader()
-  @UseGuards(JwtRefreshAuthGuard, RBACGuard)
-  @AllowRoles(UserRole.USER)
+  @UseGuards(JwtRefreshAuthGuard)
   async refreshMobile(
     @GetUser() user: RefreshRequestUser,
     @Req() req: Request,
   ): Promise<MobileRefreshResponse> {
     const uaPayload = this.getUaPayload(req);
-    return this.authService.refreshMobile(
+    return this.userAuthService.refreshMobile(
       user.refreshTokenId,
       user.userId,
       uaPayload,
@@ -103,6 +101,6 @@ export class AuthController extends AbstractAuthController {
   @UseGuards(JwtAuthGuard, RBACGuard)
   @AllowRoles(UserRole.USER)
   getProfile(@GetUser() user: RequestUser): Promise<UserProfileSerializer> {
-    return this.authService.getProfile(user.id);
+    return this.userAuthService.getProfile(user.id);
   }
 }

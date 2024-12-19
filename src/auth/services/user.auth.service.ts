@@ -2,29 +2,34 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
-import { AdminsService } from 'src/admins/admins.service';
 import { UserRole } from 'src/common/enums/user-role.enum';
-import { AdminRefreshTokensService } from 'src/refresh-tokens/services/admin.refresh-tokens.service';
+import { UserRefreshTokensService } from 'src/refresh-tokens/services/user.refresh-tokens.service';
 import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
-import { AbstractAuthService } from './abstract.auth.service';
-import { LoginDto } from './dtos/login.dto';
-import { AdminProfileSerializer } from './serializers/admin-profile.serializer';
+import { UsersService } from 'src/users/users.service';
+import { LoginDto } from '../dtos/login.dto';
+import { RegisterUserDto } from '../dtos/register-user.dto';
+import { UserProfileSerializer } from '../serializers/user-profile.serializer';
 import {
   MobileLoginResponse,
   WebLoginResponse,
-} from './types/login.response.type';
+} from '../types/login.response.type';
+import { AbstractAuthService } from './abstract.auth.service';
 
 @Injectable()
-export class AdminAuthService extends AbstractAuthService {
+export class UserAuthService extends AbstractAuthService {
   constructor(
     private readonly jwtService: JwtService,
     protected readonly configService: ConfigService,
-    private readonly adminService: AdminsService,
-    private readonly adminRefreshTokenService: AdminRefreshTokensService,
+    private readonly userService: UsersService,
+    private readonly userRefreshTokenService: UserRefreshTokensService,
   ) {
     super(configService, {
-      refreshTokenPath: '/auth/admin/refresh',
+      refreshTokenPath: '/auth/refresh',
     });
+  }
+
+  async register(userData: RegisterUserDto): Promise<UserProfileSerializer> {
+    return this.userService.register(userData);
   }
 
   async webLogin(
@@ -33,22 +38,22 @@ export class AdminAuthService extends AbstractAuthService {
     response: Response,
   ): Promise<WebLoginResponse> {
     const { username: inputUsername, password: inputPassword } = loginPayload;
-    const admin = await this.adminService.validateLoginDetails(
+    const user = await this.userService.validateUserLoginDetails(
       inputUsername,
       inputPassword,
     );
-    const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
+    const { _id, username, email, gender, profilePic, status } = user;
+    const jwtPayload = { sub: _id, role: UserRole.USER };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.adminRefreshTokenService.generateRefreshToken({
+      await this.userRefreshTokenService.generateRefreshToken({
         ...uaPayload,
         user: _id.toHexString(),
         expiresAt: refreshCookieExpiryDateTime,
       });
     this.setAuthCookies({ accessToken, refreshToken }, response);
-    const adminData = {
+    const userData = {
       username,
       email,
       gender,
@@ -56,7 +61,7 @@ export class AdminAuthService extends AbstractAuthService {
       status,
     };
     return {
-      data: adminData,
+      data: userData,
     };
   }
 
@@ -65,20 +70,20 @@ export class AdminAuthService extends AbstractAuthService {
     uaPayload: UAPayload,
   ): Promise<MobileLoginResponse> {
     const { username: inputUsername, password: inputPassword } = loginPayload;
-    const admin = await this.adminService.validateLoginDetails(
+    const user = await this.userService.validateUserLoginDetails(
       inputUsername,
       inputPassword,
     );
-    const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
+    const { _id, username, email, gender, profilePic, status } = user;
+    const jwtPayload = { sub: _id, role: UserRole.USER };
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.adminRefreshTokenService.generateRefreshToken({
+      await this.userRefreshTokenService.generateRefreshToken({
         ...uaPayload,
         user: _id.toHexString(),
         expiresAt: refreshCookieExpiryDateTime,
       });
-    const adminData = {
+    const userData = {
       username,
       email,
       gender,
@@ -88,10 +93,11 @@ export class AdminAuthService extends AbstractAuthService {
     return {
       refreshToken,
       accessToken: this.jwtService.sign(jwtPayload),
-      data: adminData,
+      data: userData,
     };
   }
 
+  // NOTE: No need to validate the refresh token and user because it is already done by the JWTRefreshAuthGuard
   async refreshWeb(
     refreshTokenId: string,
     userId: string,
@@ -102,7 +108,7 @@ export class AdminAuthService extends AbstractAuthService {
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.adminRefreshTokenService.regenerateRefreshToken(
+      await this.userRefreshTokenService.regenerateRefreshToken(
         refreshTokenId,
         {
           ...uaPayload,
@@ -122,7 +128,7 @@ export class AdminAuthService extends AbstractAuthService {
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.adminRefreshTokenService.regenerateRefreshToken(
+      await this.userRefreshTokenService.regenerateRefreshToken(
         refreshTokenId,
         {
           ...uaPayload,
@@ -136,7 +142,7 @@ export class AdminAuthService extends AbstractAuthService {
     };
   }
 
-  async getProfile(id: string): Promise<AdminProfileSerializer> {
-    return this.adminService.getProfile(id);
+  async getProfile(id: string): Promise<UserProfileSerializer> {
+    return this.userService.getUserProfile(id);
   }
 }

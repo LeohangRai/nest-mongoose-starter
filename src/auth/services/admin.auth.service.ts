@@ -2,34 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
+import { AdminsService } from 'src/admins/admins.service';
 import { UserRole } from 'src/common/enums/user-role.enum';
-import { UserRefreshTokensService } from 'src/refresh-tokens/services/user.refresh-tokens.service';
+import { AdminRefreshTokensService } from 'src/refresh-tokens/services/admin.refresh-tokens.service';
 import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
-import { UsersService } from 'src/users/users.service';
-import { AbstractAuthService } from './abstract.auth.service';
-import { LoginDto } from './dtos/login.dto';
-import { RegisterUserDto } from './dtos/register-user.dto';
-import { UserProfileSerializer } from './serializers/user-profile.serializer';
+import { LoginDto } from '../dtos/login.dto';
+import { AdminProfileSerializer } from '../serializers/admin-profile.serializer';
 import {
   MobileLoginResponse,
   WebLoginResponse,
-} from './types/login.response.type';
+} from '../types/login.response.type';
+import { AbstractAuthService } from './abstract.auth.service';
 
 @Injectable()
-export class AuthService extends AbstractAuthService {
+export class AdminAuthService extends AbstractAuthService {
   constructor(
     private readonly jwtService: JwtService,
     protected readonly configService: ConfigService,
-    private readonly userService: UsersService,
-    private readonly userRefreshTokenService: UserRefreshTokensService,
+    private readonly adminService: AdminsService,
+    private readonly adminRefreshTokenService: AdminRefreshTokensService,
   ) {
     super(configService, {
-      refreshTokenPath: '/auth/refresh',
+      refreshTokenPath: '/auth/admin/refresh',
     });
-  }
-
-  async register(userData: RegisterUserDto): Promise<UserProfileSerializer> {
-    return this.userService.register(userData);
   }
 
   async webLogin(
@@ -38,22 +33,22 @@ export class AuthService extends AbstractAuthService {
     response: Response,
   ): Promise<WebLoginResponse> {
     const { username: inputUsername, password: inputPassword } = loginPayload;
-    const user = await this.userService.validateUserLoginDetails(
+    const admin = await this.adminService.validateLoginDetails(
       inputUsername,
       inputPassword,
     );
-    const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { sub: _id, role: UserRole.USER };
+    const { _id, username, email, gender, profilePic, status } = admin;
+    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.userRefreshTokenService.generateRefreshToken({
+      await this.adminRefreshTokenService.generateRefreshToken({
         ...uaPayload,
         user: _id.toHexString(),
         expiresAt: refreshCookieExpiryDateTime,
       });
     this.setAuthCookies({ accessToken, refreshToken }, response);
-    const userData = {
+    const adminData = {
       username,
       email,
       gender,
@@ -61,7 +56,7 @@ export class AuthService extends AbstractAuthService {
       status,
     };
     return {
-      data: userData,
+      data: adminData,
     };
   }
 
@@ -70,20 +65,20 @@ export class AuthService extends AbstractAuthService {
     uaPayload: UAPayload,
   ): Promise<MobileLoginResponse> {
     const { username: inputUsername, password: inputPassword } = loginPayload;
-    const user = await this.userService.validateUserLoginDetails(
+    const admin = await this.adminService.validateLoginDetails(
       inputUsername,
       inputPassword,
     );
-    const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { sub: _id, role: UserRole.USER };
+    const { _id, username, email, gender, profilePic, status } = admin;
+    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.userRefreshTokenService.generateRefreshToken({
+      await this.adminRefreshTokenService.generateRefreshToken({
         ...uaPayload,
         user: _id.toHexString(),
         expiresAt: refreshCookieExpiryDateTime,
       });
-    const userData = {
+    const adminData = {
       username,
       email,
       gender,
@@ -93,22 +88,21 @@ export class AuthService extends AbstractAuthService {
     return {
       refreshToken,
       accessToken: this.jwtService.sign(jwtPayload),
-      data: userData,
+      data: adminData,
     };
   }
 
-  // NOTE: No need to validate the refresh token and user because it is already done by the JWTRefreshAuthGuard
   async refreshWeb(
     refreshTokenId: string,
     userId: string,
     uaPayload: UAPayload,
     response: Response,
   ): Promise<void> {
-    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const jwtPayload = { sub: userId, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.userRefreshTokenService.regenerateRefreshToken(
+      await this.adminRefreshTokenService.regenerateRefreshToken(
         refreshTokenId,
         {
           ...uaPayload,
@@ -124,11 +118,11 @@ export class AuthService extends AbstractAuthService {
     userId: string,
     uaPayload: UAPayload,
   ) {
-    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const jwtPayload = { sub: userId, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
-      await this.userRefreshTokenService.regenerateRefreshToken(
+      await this.adminRefreshTokenService.regenerateRefreshToken(
         refreshTokenId,
         {
           ...uaPayload,
@@ -142,7 +136,7 @@ export class AuthService extends AbstractAuthService {
     };
   }
 
-  async getProfile(id: string): Promise<UserProfileSerializer> {
-    return this.userService.getUserProfile(id);
+  async getProfile(id: string): Promise<AdminProfileSerializer> {
+    return this.adminService.getProfile(id);
   }
 }

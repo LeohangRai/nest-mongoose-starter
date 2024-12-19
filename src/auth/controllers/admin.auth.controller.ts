@@ -16,19 +16,19 @@ import { ApiRefreshTokenHeader } from 'src/common/decorators/swagger/api.refresh
 import { UserRole } from 'src/common/enums/user-role.enum';
 import { RefreshRequestUser } from 'src/common/types/refresh-request-user.type';
 import { RequestUser } from 'src/common/types/request-user.type';
-import { AbstractAuthController } from './abstract.auth.controller';
-import { AdminAuthService } from './admin.auth.service';
-import { AllowRoles } from './decorators/allow-roles.decorator';
-import { LoginDto } from './dtos/login.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { JwtRefreshAuthGuard } from './guards/jwt-refresh.auth.guard';
-import { RBACGuard } from './guards/rbac.guard';
-import { AdminProfileSerializer } from './serializers/admin-profile.serializer';
+import { AllowRoles } from '../decorators/allow-roles.decorator';
+import { LoginDto } from '../dtos/login.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtRefreshAuthGuard } from '../guards/jwt-refresh.auth.guard';
+import { RBACGuard } from '../guards/rbac.guard';
+import { AdminProfileSerializer } from '../serializers/admin-profile.serializer';
+import { AdminAuthService } from '../services/admin.auth.service';
 import {
   MobileLoginResponse,
   MobileRefreshResponse,
   WebLoginResponse,
-} from './types/login.response.type';
+} from '../types/login.response.type';
+import { AbstractAuthController } from './abstract.auth.controller';
 
 @ApiTags('auth (admin)')
 @Controller('auth/admin')
@@ -57,8 +57,7 @@ export class AdminAuthController extends AbstractAuthController {
   }
 
   @Post('/refresh/web')
-  @UseGuards(JwtRefreshAuthGuard, RBACGuard)
-  @AllowRoles(UserRole.USER)
+  @UseGuards(JwtRefreshAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async refreshWeb(
     @GetUser() user: RefreshRequestUser,
@@ -76,8 +75,7 @@ export class AdminAuthController extends AbstractAuthController {
 
   @Post('/refresh/mobile')
   @ApiRefreshTokenHeader()
-  @UseGuards(JwtRefreshAuthGuard, RBACGuard)
-  @AllowRoles(UserRole.USER)
+  @UseGuards(JwtRefreshAuthGuard)
   async refreshMobile(
     @GetUser() user: RefreshRequestUser,
     @Req() req: Request,

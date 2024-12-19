@@ -3,14 +3,14 @@ import { RefreshRequestUser } from 'src/common/types/refresh-request-user.type';
 import { RequestUser } from 'src/common/types/request-user.type';
 import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
 import { UAParser } from 'ua-parser-js';
-import { LoginDto } from './dtos/login.dto';
-import { AdminProfileSerializer } from './serializers/admin-profile.serializer';
-import { UserProfileSerializer } from './serializers/user-profile.serializer';
+import { LoginDto } from '../dtos/login.dto';
+import { AdminProfileSerializer } from '../serializers/admin-profile.serializer';
+import { UserProfileSerializer } from '../serializers/user-profile.serializer';
 import {
   MobileLoginResponse,
   MobileRefreshResponse,
   WebLoginResponse,
-} from './types/login.response.type';
+} from '../types/login.response.type';
 
 export abstract class AbstractAuthController {
   protected getUaPayload(req: Request): UAPayload {

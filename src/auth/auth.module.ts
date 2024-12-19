@@ -4,16 +4,21 @@ import { JwtModule } from '@nestjs/jwt';
 import { AdminsModule } from 'src/admins/admins.module';
 import { RefreshTokensModule } from 'src/refresh-tokens/refresh-tokens.module';
 import { UsersModule } from 'src/users/users.module';
-import { AdminAuthController } from './admin.auth.controller';
-import { AdminAuthService } from './admin.auth.service';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AdminAuthController } from './controllers/admin.auth.controller';
+import { UserAuthController } from './controllers/user.auth.controller';
+import { AdminAuthService } from './services/admin.auth.service';
+import { UserAuthService } from './services/user.auth.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
-  controllers: [AdminAuthController, AuthController],
-  providers: [AdminAuthService, AuthService, JwtStrategy, JwtRefreshStrategy],
+  controllers: [AdminAuthController, UserAuthController],
+  providers: [
+    AdminAuthService,
+    UserAuthService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+  ],
   imports: [
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({

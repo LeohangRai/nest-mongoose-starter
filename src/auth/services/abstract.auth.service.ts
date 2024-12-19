@@ -2,15 +2,15 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { CustomCookieOptions } from 'src/common/types/custom-cookie.options.type';
 import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
-import { DEFAULT_COOKIE_OPTIONS } from './constants/default-cookie-options';
-import { LoginDto } from './dtos/login.dto';
-import { CookieKey } from './enums/cookie-key.enum';
-import { AdminProfileSerializer } from './serializers/admin-profile.serializer';
-import { UserProfileSerializer } from './serializers/user-profile.serializer';
+import { DEFAULT_COOKIE_OPTIONS } from '../constants/default-cookie-options';
+import { LoginDto } from '../dtos/login.dto';
+import { CookieKey } from '../enums/cookie-key.enum';
+import { AdminProfileSerializer } from '../serializers/admin-profile.serializer';
+import { UserProfileSerializer } from '../serializers/user-profile.serializer';
 import {
   MobileLoginResponse,
   WebLoginResponse,
-} from './types/login.response.type';
+} from '../types/login.response.type';
 
 export abstract class AbstractAuthService {
   protected cookieConfig = DEFAULT_COOKIE_OPTIONS;
@@ -52,8 +52,8 @@ export abstract class AbstractAuthService {
   ): Promise<MobileLoginResponse>;
 
   /**
-   * get the profile of a user
-   * @param id - User ID
+   * get the profile of a user/admin
+   * @param id - ID of the user/admin
    * @returns Promise<AdminProfileSerializer | UserProfileSerializer>
    */
   abstract getProfile(
