@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AdminsModule } from 'src/admins/admins.module';
 import { COLLECTION_NAMES } from 'src/schemas/consts';
 import {
   AdminRefreshToken,
@@ -11,6 +12,7 @@ import {
   UserRefreshToken,
   UserRefreshTokenSchema,
 } from 'src/schemas/refresh-token-schemas/user.refresh-token.schema';
+import { UsersModule } from 'src/users/users.module';
 import { AdminRefreshTokensService } from './services/admin.refresh-tokens.service';
 import { UserRefreshTokensService } from './services/user.refresh-tokens.service';
 
@@ -37,6 +39,8 @@ import { UserRefreshTokensService } from './services/user.refresh-tokens.service
         collection: COLLECTION_NAMES.ADMIN_REFRESH_TOKENS,
       },
     ]),
+    AdminsModule,
+    UsersModule,
   ],
   providers: [AdminRefreshTokensService, UserRefreshTokensService],
   exports: [AdminRefreshTokensService, UserRefreshTokensService],

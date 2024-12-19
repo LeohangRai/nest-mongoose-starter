@@ -23,7 +23,9 @@ export class AuthService extends AbstractAuthService {
     private readonly userService: UsersService,
     private readonly userRefreshTokenService: UserRefreshTokensService,
   ) {
-    super(configService);
+    super(configService, {
+      refreshTokenPath: '/auth/refresh',
+    });
   }
 
   async register(userData: RegisterUserDto): Promise<UserProfileSerializer> {
@@ -41,7 +43,7 @@ export class AuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { username, sub: _id, role: UserRole.USER };
+    const jwtPayload = { sub: _id, role: UserRole.USER };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
@@ -73,7 +75,7 @@ export class AuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { username, sub: _id, role: UserRole.USER };
+    const jwtPayload = { sub: _id, role: UserRole.USER };
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
       await this.userRefreshTokenService.generateRefreshToken({
@@ -92,6 +94,51 @@ export class AuthService extends AbstractAuthService {
       refreshToken,
       accessToken: this.jwtService.sign(jwtPayload),
       data: userData,
+    };
+  }
+
+  // NOTE: No need to validate the refresh token and user because it is already done by the JWTRefreshAuthGuard
+  async refreshWeb(
+    refreshTokenId: string,
+    userId: string,
+    uaPayload: UAPayload,
+    response: Response,
+  ): Promise<void> {
+    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const accessToken = this.jwtService.sign(jwtPayload);
+    const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
+    const refreshToken =
+      await this.userRefreshTokenService.regenerateRefreshToken(
+        refreshTokenId,
+        {
+          ...uaPayload,
+          user: userId,
+          expiresAt: refreshCookieExpiryDateTime,
+        },
+      );
+    this.setAuthCookies({ accessToken, refreshToken }, response);
+  }
+
+  async refreshMobile(
+    refreshTokenId: string,
+    userId: string,
+    uaPayload: UAPayload,
+  ) {
+    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const accessToken = this.jwtService.sign(jwtPayload);
+    const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
+    const refreshToken =
+      await this.userRefreshTokenService.regenerateRefreshToken(
+        refreshTokenId,
+        {
+          ...uaPayload,
+          user: userId,
+          expiresAt: refreshCookieExpiryDateTime,
+        },
+      );
+    return {
+      refreshToken,
+      accessToken,
     };
   }
 

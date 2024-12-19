@@ -33,12 +33,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   /**
-   * Checks whether the `id` from the JWT payload is valid or not.
-   * - Throws UnauthorizedException if the user is not found or is not active
-   * - Useful for cases where the user is deleted/blocked after the token is issued
-   * #### NOTE: Passport builds a `user` object based on the return value of the `validate()` method, and attaches it as a property `('user')` on the Request object.
+   * validate whether the `id` from the JWT payload is valid or not
+   * - useful for cases where the user is deleted/blocked after the token is issued
+   *
+   * #### NOTE:
+   * Passport builds a `user` object based on the return value of the `validate()` method, and attaches it as a property `('user')` on the Request object.
    * @param payload
    * @returns RequestUser
+   * @throws UnauthorizedException if the user is not found or is not active
    */
   async validate(payload: JWTPayload): Promise<RequestUser> {
     if (payload.role === UserRole.USER) {
@@ -48,8 +50,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       await this.adminService.validateAdminId(payload.sub);
     }
     return {
-      userId: payload.sub,
-      username: payload.username,
+      id: payload.sub,
       role: payload.role,
     };
   }

@@ -6,7 +6,7 @@ import { RefreshToken } from './abstract.refresh-token.schema';
 @Schema({ timestamps: true })
 export class AdminRefreshToken extends RefreshToken {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Admin', required: true })
-  admin: Admin;
+  user: Admin;
 }
 
 export const AdminRefreshTokenSchema =

@@ -1,28 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model } from 'mongoose';
+import { UserRole } from 'src/common/enums/user-role.enum';
 import { UserRefreshToken } from 'src/schemas/refresh-token-schemas/user.refresh-token.schema';
-import { UserRefreshTokenPayload } from '../types/refresh-token-payload.type';
+import { UsersService } from 'src/users/users.service';
 import { AbstractRefreshTokensService } from './abstract.refresh-tokens.service';
 
 @Injectable()
 export class UserRefreshTokensService extends AbstractRefreshTokensService<UserRefreshToken> {
   constructor(
-    private readonly jwtService: JwtService,
+    protected readonly jwtService: JwtService,
     @InjectModel(UserRefreshToken.name)
     protected readonly model: Model<UserRefreshToken>,
+    @InjectConnection() protected readonly connection: Connection,
+    private readonly userService: UsersService,
   ) {
-    super(model);
+    super(UserRole.USER, jwtService, model, connection);
   }
 
-  async generateRefreshToken(
-    payload: UserRefreshTokenPayload,
-  ): Promise<string> {
-    const newRefreshTokenDocument = await new this.model(payload).save();
-    return this.jwtService.sign({
-      sub: newRefreshTokenDocument._id,
-      userId: payload.user,
-    });
+  protected validateRefreshTokenUser(userId: string): Promise<boolean> {
+    return this.userService.validateUserId(userId);
   }
 }

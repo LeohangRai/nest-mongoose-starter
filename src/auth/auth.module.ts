@@ -8,11 +8,12 @@ import { AdminAuthController } from './admin.auth.controller';
 import { AdminAuthService } from './admin.auth.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   controllers: [AdminAuthController, AuthController],
-  providers: [AdminAuthService, AuthService, JwtStrategy],
+  providers: [AdminAuthService, AuthService, JwtStrategy, JwtRefreshStrategy],
   imports: [
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({

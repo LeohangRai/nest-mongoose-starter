@@ -22,7 +22,9 @@ export class AdminAuthService extends AbstractAuthService {
     private readonly adminService: AdminsService,
     private readonly adminRefreshTokenService: AdminRefreshTokensService,
   ) {
-    super(configService);
+    super(configService, {
+      refreshTokenPath: '/auth/admin/refresh',
+    });
   }
 
   async webLogin(
@@ -36,13 +38,13 @@ export class AdminAuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { username, sub: _id, role: UserRole.ADMIN };
+    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
       await this.adminRefreshTokenService.generateRefreshToken({
         ...uaPayload,
-        admin: _id.toHexString(),
+        user: _id.toHexString(),
         expiresAt: refreshCookieExpiryDateTime,
       });
     this.setAuthCookies({ accessToken, refreshToken }, response);
@@ -68,12 +70,12 @@ export class AdminAuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { username, sub: _id, role: UserRole.ADMIN };
+    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
       await this.adminRefreshTokenService.generateRefreshToken({
         ...uaPayload,
-        admin: _id.toHexString(),
+        user: _id.toHexString(),
         expiresAt: refreshCookieExpiryDateTime,
       });
     const adminData = {
@@ -87,6 +89,50 @@ export class AdminAuthService extends AbstractAuthService {
       refreshToken,
       accessToken: this.jwtService.sign(jwtPayload),
       data: adminData,
+    };
+  }
+
+  async refreshWeb(
+    refreshTokenId: string,
+    userId: string,
+    uaPayload: UAPayload,
+    response: Response,
+  ): Promise<void> {
+    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const accessToken = this.jwtService.sign(jwtPayload);
+    const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
+    const refreshToken =
+      await this.adminRefreshTokenService.regenerateRefreshToken(
+        refreshTokenId,
+        {
+          ...uaPayload,
+          user: userId,
+          expiresAt: refreshCookieExpiryDateTime,
+        },
+      );
+    this.setAuthCookies({ accessToken, refreshToken }, response);
+  }
+
+  async refreshMobile(
+    refreshTokenId: string,
+    userId: string,
+    uaPayload: UAPayload,
+  ) {
+    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const accessToken = this.jwtService.sign(jwtPayload);
+    const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
+    const refreshToken =
+      await this.adminRefreshTokenService.regenerateRefreshToken(
+        refreshTokenId,
+        {
+          ...uaPayload,
+          user: userId,
+          expiresAt: refreshCookieExpiryDateTime,
+        },
+      );
+    return {
+      refreshToken,
+      accessToken,
     };
   }
 

@@ -5,18 +5,11 @@ export type UAPayload = {
   os: string;
 };
 
-export type BaseRefreshTokenPayload = {
+export type RefreshTokenPayload = {
   userAgent?: string;
   ipAddress?: string;
   browser?: string;
   os?: string;
   expiresAt: Date;
-};
-
-export type UserRefreshTokenPayload = BaseRefreshTokenPayload & {
   user: string;
-};
-
-export type AdminRefreshTokenPayload = BaseRefreshTokenPayload & {
-  admin: string;
 };

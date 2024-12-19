@@ -14,7 +14,13 @@ export class AdminsService {
     @InjectModel(Admin.name) private readonly adminModel: Model<Admin>,
   ) {}
 
-  /* currently being used by the jwt.strategy validate() method */
+  /**
+   * validates whether the admin associated with the id is valid or not
+   * - usable inside the jwt.strategy validate() method
+   * @param id ID of the admin
+   * @returns boolean
+   * @throws UnauthorizedException if the user is not found or is not active
+   */
   async validateAdminId(id: string): Promise<boolean> {
     const admin = await this.adminModel
       .findById(id, { _id: true, status: true })
