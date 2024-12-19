@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ClientSession, Connection, Model, QueryOptions } from 'mongoose';
 import { UserRole } from 'src/common/enums/user-role.enum';
+import { SignRefreshJWTInput } from 'src/common/types/sign-jwt.input.type';
 import { AdminRefreshToken } from 'src/schemas/refresh-token-schemas/admin.refresh-token.schema';
 import { UserRefreshToken } from 'src/schemas/refresh-token-schemas/user.refresh-token.schema';
 import { RefreshTokenPayload } from '../types/refresh-token-payload.type';
@@ -66,11 +67,12 @@ export abstract class AbstractRefreshTokensService<
     const newRefreshTokenDocument = await new this.model(payload).save(
       queryOpts,
     );
-    return this.jwtService.sign({
-      sub: newRefreshTokenDocument._id,
+    const refreshTokenInput: SignRefreshJWTInput = {
+      sub: newRefreshTokenDocument._id as string,
       userId: payload.user,
       role: this.role,
-    });
+    };
+    return this.jwtService.sign(refreshTokenInput);
   }
 
   /**

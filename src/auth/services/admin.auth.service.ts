@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { AdminsService } from 'src/admins/admins.service';
 import { UserRole } from 'src/common/enums/user-role.enum';
+import { SignJWTInput } from 'src/common/types/sign-jwt.input.type';
 import { AdminRefreshTokensService } from 'src/refresh-tokens/services/admin.refresh-tokens.service';
 import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
 import { LoginDto } from '../dtos/login.dto';
@@ -38,7 +39,10 @@ export class AdminAuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
+    const jwtPayload: SignJWTInput = {
+      sub: _id.toHexString(),
+      role: UserRole.ADMIN,
+    };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
@@ -70,7 +74,10 @@ export class AdminAuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = admin;
-    const jwtPayload = { sub: _id, role: UserRole.ADMIN };
+    const jwtPayload: SignJWTInput = {
+      sub: _id.toHexString(),
+      role: UserRole.ADMIN,
+    };
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
       await this.adminRefreshTokenService.generateRefreshToken({
@@ -98,7 +105,7 @@ export class AdminAuthService extends AbstractAuthService {
     uaPayload: UAPayload,
     response: Response,
   ): Promise<void> {
-    const jwtPayload = { sub: userId, role: UserRole.ADMIN };
+    const jwtPayload: SignJWTInput = { sub: userId, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
@@ -118,7 +125,7 @@ export class AdminAuthService extends AbstractAuthService {
     userId: string,
     uaPayload: UAPayload,
   ) {
-    const jwtPayload = { sub: userId, role: UserRole.ADMIN };
+    const jwtPayload: SignJWTInput = { sub: userId, role: UserRole.ADMIN };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =

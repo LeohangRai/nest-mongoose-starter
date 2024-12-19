@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { UserRole } from 'src/common/enums/user-role.enum';
+import { SignJWTInput } from 'src/common/types/sign-jwt.input.type';
 import { UserRefreshTokensService } from 'src/refresh-tokens/services/user.refresh-tokens.service';
 import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
 import { UsersService } from 'src/users/users.service';
@@ -43,7 +44,10 @@ export class UserAuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { sub: _id, role: UserRole.USER };
+    const jwtPayload: SignJWTInput = {
+      sub: _id.toHexString(),
+      role: UserRole.USER,
+    };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
@@ -75,7 +79,10 @@ export class UserAuthService extends AbstractAuthService {
       inputPassword,
     );
     const { _id, username, email, gender, profilePic, status } = user;
-    const jwtPayload = { sub: _id, role: UserRole.USER };
+    const jwtPayload: SignJWTInput = {
+      sub: _id.toHexString(),
+      role: UserRole.USER,
+    };
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
       await this.userRefreshTokenService.generateRefreshToken({
@@ -124,7 +131,7 @@ export class UserAuthService extends AbstractAuthService {
     userId: string,
     uaPayload: UAPayload,
   ) {
-    const jwtPayload = { sub: userId, role: UserRole.USER };
+    const jwtPayload: SignJWTInput = { sub: userId, role: UserRole.USER };
     const accessToken = this.jwtService.sign(jwtPayload);
     const { refreshCookieExpiryDateTime } = this.getCookiesExpiryDateTime();
     const refreshToken =
