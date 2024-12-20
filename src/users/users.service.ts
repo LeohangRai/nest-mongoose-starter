@@ -14,6 +14,7 @@ import {
   DEFAULT_QUERY_LIMIT,
   DEFAULT_QUERY_PAGE,
 } from 'src/common/dtos/query.dto';
+import { AuthProvider } from 'src/common/enums/auth-provider.enum';
 import { SortDirection } from 'src/common/enums/sort-direction.enum';
 import { UserStatus } from 'src/common/enums/user-status.enum';
 import {
@@ -225,6 +226,7 @@ export class UsersService {
       const { password } = userData;
       const userInstance = new this.userModel({
         ...userData,
+        originalProvider: AuthProvider.LOCAL,
         password: hashPassword(password),
         ...(newSettingsId && {
           settings: newSettingsId,
