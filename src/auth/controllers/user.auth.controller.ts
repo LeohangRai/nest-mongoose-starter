@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { ApiRefreshTokenHeader } from 'src/common/decorators/swagger/api.refresh-token.header.decorator';
+import { SkipGlobalThrottler } from 'src/common/decorators/throttling/skip-global-throttler.decorator';
 import { UserRole } from 'src/common/enums/user-role.enum';
 import { RefreshRequestUser } from 'src/common/types/refresh-request-user.type';
 import { RequestUser } from 'src/common/types/request-user.type';
@@ -46,6 +47,7 @@ export class UserAuthController extends AbstractAuthController {
   }
 
   @Post('login/web')
+  @SkipGlobalThrottler()
   async webLogin(
     @Body() loginData: LoginDto,
     @Req() req: Request,
@@ -56,6 +58,7 @@ export class UserAuthController extends AbstractAuthController {
   }
 
   @Post('login/mobile')
+  @SkipGlobalThrottler()
   async mobileLogin(
     @Body() loginData: LoginDto,
     @Req() req: Request,

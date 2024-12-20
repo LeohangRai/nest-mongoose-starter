@@ -30,3 +30,7 @@ rate_limit:
   global:
     ttl: # in milliseconds (default is 60000)
     limit: # number of requests (default is 10)
+  # '/login' endpoint rate limit options (default is 5 requests per 5 minutes)
+  login:
+    ttl: # in milliseconds (default is 300000 ms, i.e. 5 minutes)
+    limit: # number of requests (default is 5)

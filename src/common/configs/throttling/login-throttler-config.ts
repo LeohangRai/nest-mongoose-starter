@@ -3,7 +3,7 @@ import { ThrottlerAsyncOptions, ThrottlerStorage } from '@nestjs/throttler';
 import { ThrottlerName } from 'src/common/enums/throttler-name.enum';
 import { getThrottlerStorageRedisService } from 'src/common/helpers/throttling/get-throttler-storage-redis-service';
 
-export const globalThrottlerConfig: ThrottlerAsyncOptions = {
+export const loginThrottlerConfig: ThrottlerAsyncOptions = {
   imports: [ConfigModule],
   useFactory: (configService: ConfigService) => {
     const storageEngine = configService.get<string>('rate_limit.storage');
@@ -15,9 +15,9 @@ export const globalThrottlerConfig: ThrottlerAsyncOptions = {
       ...storageOpts,
       throttlers: [
         {
-          name: ThrottlerName.GLOBAL, // overriding the default name 'default' with 'global' for clarity and consistency
-          ttl: configService.get<number>('rate_limit.global.ttl') || 60000,
-          limit: configService.get<number>('rate_limit.global.limit') || 10,
+          name: ThrottlerName.LOGIN,
+          ttl: configService.get<number>('rate_limit.login.ttl') || 300000,
+          limit: configService.get<number>('rate_limit.login.limit') || 5,
         },
       ],
     };

@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipGlobalThrottler } from './common/decorators/throttling/skip-global-throttler.decorator';
 
 @ApiTags('health-check')
 @Controller()
 export class AppController {
   @Get()
-  @SkipThrottle({ global: true })
+  @SkipGlobalThrottler()
   healthCheck() {
     return {
       status: 'ok',

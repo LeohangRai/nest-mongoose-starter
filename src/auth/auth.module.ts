@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AdminsModule } from 'src/admins/admins.module';
+import { loginThrottlerConfig } from 'src/common/configs/throttling/login-throttler-config';
+import { LoginThrottlerGuard } from 'src/common/guards/login-throttle.guard';
 import { RefreshTokensModule } from 'src/refresh-tokens/refresh-tokens.module';
 import { UsersModule } from 'src/users/users.module';
 import { AdminAuthController } from './controllers/admin.auth.controller';
@@ -18,6 +22,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UserAuthService,
     JwtStrategy,
     JwtRefreshStrategy,
+    {
+      provide: APP_GUARD,
+      useClass: LoginThrottlerGuard,
+    },
   ],
   imports: [
     JwtModule.registerAsync({
@@ -29,6 +37,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
       inject: [ConfigService],
     }),
+    ThrottlerModule.forRootAsync(loginThrottlerConfig),
     AdminsModule,
     UsersModule,
     RefreshTokensModule,
