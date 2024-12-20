@@ -13,7 +13,7 @@ import { AppModule } from './app.module';
 import {
   SWAGGER_CONFIG,
   SWAGGER_URL,
-} from './common/helpers/swagger/swagger-config';
+} from './common/configs/swagger/swagger-config';
 import { formatErrors } from './common/helpers/validation/format-errors';
 
 async function bootstrap() {
