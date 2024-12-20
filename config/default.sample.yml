@@ -6,6 +6,13 @@ database:
   mongo_url:
   logging: # the value you provide will be typecasted to boolean (0, '', false will be treated as false)
 
+redis:
+  host:
+  port:
+  db: # default is 0
+  username:
+  password:
+
 jwt:
   secret:
   expiresIn: # should be a number (in seconds)
@@ -13,6 +20,13 @@ jwt:
   refreshTokenExpiresIn: # should be a number (in seconds)
 
 swagger:
-  # basic swagger auth guard will be enabled if 'both' user and password are providedØ
+  # basic swagger auth guard will be enabled if 'both' user and password are provided
   user:
   password:
+
+rate_limit:
+  storage: # 'memory' or 'redis' (default is 'memory')
+  # global rate limit options (default is 10 requests per minute)
+  global:
+    ttl: # in milliseconds (default is 60000)
+    limit: # number of requests (default is 10)
