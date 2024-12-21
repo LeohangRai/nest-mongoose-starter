@@ -11,7 +11,7 @@ function isRegisteredWithLocalAuthProvider(): boolean {
   return this.originalProvider === AuthProvider.LOCAL;
 }
 
-class UserLinkedAccount {
+export class UserLinkedAccount {
   provider: AuthProvider;
   providerId: string;
 }
@@ -30,14 +30,14 @@ export class User {
     trim: true,
     required: isRegisteredWithLocalAuthProvider,
   })
-  username: string;
+  username?: string;
 
   @Prop({
     trim: true,
     lowercase: true,
     required: isRegisteredWithLocalAuthProvider,
   })
-  email: string;
+  email?: string;
 
   @Prop({
     required: false,
@@ -52,13 +52,13 @@ export class User {
   @Prop({
     required: isRegisteredWithLocalAuthProvider,
   })
-  password: string;
+  password?: string;
 
   @Prop({
     enum: UserStatus,
     default: UserStatus.ACTIVE,
   })
-  status: UserStatus;
+  status?: UserStatus;
 
   @Prop({
     type: [{ type: UserLinkedAccount }],
@@ -77,7 +77,7 @@ export class User {
   @Prop({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   })
-  posts: Post[];
+  posts?: Post[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

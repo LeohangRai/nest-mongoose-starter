@@ -10,6 +10,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { globalThrottlerConfig } from './common/configs/throttling/global-throttler-config';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { OauthModule } from './oauth/oauth.module';
 import { PostsModule } from './posts/posts.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { UsersModule } from './users/users.module';
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
     }),
     ThrottlerModule.forRootAsync(globalThrottlerConfig),
     AuthModule,
+    OauthModule,
     RefreshTokensModule,
     UsersModule,
     PostsModule,
