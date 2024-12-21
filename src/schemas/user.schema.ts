@@ -34,6 +34,12 @@ export class User {
 
   @Prop({
     trim: true,
+    required: isRegisteredWithLocalAuthProvider,
+  })
+  displayName?: string;
+
+  @Prop({
+    trim: true,
     lowercase: true,
     required: isRegisteredWithLocalAuthProvider,
   })

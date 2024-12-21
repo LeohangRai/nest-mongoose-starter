@@ -3,15 +3,35 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
+import { Response } from 'express';
 import { Model, UpdateQuery } from 'mongoose';
+import { DEFAULT_COOKIE_OPTIONS } from 'src/auth/constants/default-cookie-options';
+import { CookieKey } from 'src/auth/enums/cookie-key.enum';
+import { WebLoginResponse } from 'src/auth/types/login.response.type';
 import { AuthProvider } from 'src/common/enums/auth-provider.enum';
-import { User, UserLinkedAccount } from 'src/schemas/user.schema';
+import { UserRole } from 'src/common/enums/user-role.enum';
+import { SignJWTInput } from 'src/common/types/sign-jwt.input.type';
+import { UserRefreshTokensService } from 'src/refresh-tokens/services/user.refresh-tokens.service';
+import { UAPayload } from 'src/refresh-tokens/types/refresh-token-payload.type';
+import {
+  User,
+  UserLinkedAccount,
+  UserWithTimestamps,
+} from 'src/schemas/user.schema';
+import { OauthProfilePayload } from './types/oauth-profile-payload.type';
+import { UpdateOauthProfilePayload } from './types/update-oauth-profile.payload.type';
 
 @Injectable()
 export class OauthService {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserWithTimestamps>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly userRefreshTokenService: UserRefreshTokensService,
   ) {}
 
   /**
@@ -23,22 +43,25 @@ export class OauthService {
    * @param oauthProfileData
    * @returns User
    */
-  private async createOauthUser(oauthProfileData: {
-    provider: AuthProvider;
-    providerId: string;
-    profilePic?: string;
-    email?: string;
-    isEmailVerified?: boolean;
-  }) {
+  private async createOauthUser(
+    oauthProfileData: OauthProfilePayload,
+  ): Promise<UserWithTimestamps> {
     /* 
       If there is an 'email' property in the oauth profile data:
       - if the oauth provider is 'google', set the 'email' value on the user document no matter whether the email is verified or not
       - otherwise only populate the email field if 'isEmailVerified' is true
     */
-    const { provider, providerId, profilePic, email, isEmailVerified } =
-      oauthProfileData;
+    const {
+      provider,
+      providerId,
+      displayName,
+      profilePic,
+      email,
+      isEmailVerified,
+    } = oauthProfileData;
     const newUserData: User = {
       originalProvider: provider,
+      displayName,
       linkedAccounts: [
         {
           provider,
@@ -58,19 +81,17 @@ export class OauthService {
       userId: string;
       originalProvider: AuthProvider;
     },
-    oauthProfileData: {
-      profilePic?: string;
-      email?: string;
-      isEmailVerified?: boolean;
-    },
-  ) {
+    oauthProfileData: UpdateOauthProfilePayload,
+  ): Promise<UserWithTimestamps> {
     const { userId, originalProvider } = userData;
     /* 
       - if the original provider is not 'google' and the user does not have an email, set the email value with the new oauth profile email value (if it is verified)
       - otherwise, do not update the email value
     */
-    const { profilePic, email, isEmailVerified } = oauthProfileData;
+    const { displayName, profilePic, email, isEmailVerified } =
+      oauthProfileData;
     const profileUpdateData: UpdateQuery<User> = {
+      displayName,
       ...(profilePic && {
         profilePic,
       }),
@@ -84,7 +105,7 @@ export class OauthService {
   }
 
   /* 
-    meant to be used after all of the validations/checks have been passed and all of the confitions have been met 
+    meant to be used after all of the validations/checks have been passed and all of the conditions have been met 
   */
   private async linkProviderToUser(
     userId: string,
@@ -103,15 +124,18 @@ export class OauthService {
     );
   }
 
-  async handleOauthLogin(oauthProfileData: {
-    provider: AuthProvider;
-    providerId: string;
-    profilePic?: string;
-    email?: string;
-    isEmailVerified?: boolean;
-  }) {
-    const { provider, providerId, profilePic, email, isEmailVerified } =
-      oauthProfileData;
+  /* meant to be used in the passport oauth strategy validate() method */
+  async upsertOauthUser(
+    oauthProfileData: OauthProfilePayload,
+  ): Promise<UserWithTimestamps> {
+    const {
+      provider,
+      providerId,
+      displayName,
+      profilePic,
+      email,
+      isEmailVerified,
+    } = oauthProfileData;
     const user = await this.userModel.findOne({
       linkedAccounts: {
         $elemMatch: {
@@ -131,10 +155,11 @@ export class OauthService {
       if (user.originalProvider === provider) {
         return this.updateOauthProfile(
           {
-            userId: user._id.toHexString(),
+            userId: String(user._id),
             originalProvider: user.originalProvider,
           },
           {
+            displayName,
             profilePic,
             email,
             isEmailVerified,
@@ -154,7 +179,7 @@ export class OauthService {
       const existingEmailUser = await this.userModel.findOne({
         email,
       });
-      return this.linkProviderToUser(existingEmailUser._id.toHexString(), {
+      return this.linkProviderToUser(String(existingEmailUser._id), {
         provider,
         providerId,
       });
@@ -164,10 +189,60 @@ export class OauthService {
       Reaching this point means that 
         - there are no users who have linked or created an account with the current provider data
         - either the current provider profile data does not contain an 'email' value that is not null or the email is not verified
-        - or there are no users with the same email as the current provider profile data
-      So we simply can create a new user account with the current provider profile data
+        - or there are no users whose email matches the current provider profile email
+      So we can simply create a new user account with the current provider profile data
     */
     return this.createOauthUser(oauthProfileData);
+  }
+
+  // TODO: refactor the abstract auth service 'getCookiesExpiryDateTime' and 'setAuthCookies' methods into a separate service
+  async webLogin(
+    user: UserWithTimestamps,
+    uaPayload: UAPayload,
+    response: Response,
+  ): Promise<WebLoginResponse> {
+    const jwtPayload: SignJWTInput = {
+      sub: user._id as string,
+      role: UserRole.USER,
+    };
+    const authCookieExpiryDateTime = new Date();
+    const authCookieExpiresIn =
+      this.configService.getOrThrow<number>('jwt.expiresIn');
+    authCookieExpiryDateTime.setSeconds(
+      authCookieExpiryDateTime.getSeconds() + authCookieExpiresIn,
+    );
+    const refreshCookieExpiryDateTime = new Date();
+    const refreshCookieExpiresIn = this.configService.getOrThrow<number>(
+      'jwt.refreshTokenExpiresIn',
+    );
+    refreshCookieExpiryDateTime.setSeconds(
+      refreshCookieExpiryDateTime.getSeconds() + refreshCookieExpiresIn,
+    );
+    const accessToken = this.jwtService.sign(jwtPayload);
+    const refreshToken =
+      await this.userRefreshTokenService.generateRefreshToken({
+        ...uaPayload,
+        user: user._id as string,
+        expiresAt: refreshCookieExpiryDateTime,
+      });
+    response.cookie(CookieKey.AccessToken, accessToken, {
+      ...DEFAULT_COOKIE_OPTIONS,
+      expires: authCookieExpiryDateTime,
+    });
+    response.cookie(CookieKey.RefreshToken, refreshToken, {
+      ...DEFAULT_COOKIE_OPTIONS,
+      path: '/auth',
+      expires: refreshCookieExpiryDateTime,
+    });
+    return {
+      data: {
+        email: user.email,
+        gender: user.gender,
+        profilePic: user.profilePic,
+        status: user.status,
+        username: user.username,
+      },
+    };
   }
 
   /* 
@@ -179,12 +254,12 @@ export class OauthService {
         $elemMatch: providerData,
       },
     });
-    if (existingLink && existingLink._id.toHexString() === userId) {
+    if (existingLink && String(existingLink._id) === userId) {
       throw new BadRequestException({
         message: 'This account is already linked to your account',
       });
     }
-    if (existingLink && existingLink._id.toHexString() != userId) {
+    if (existingLink && String(existingLink._id) != userId) {
       throw new ConflictException({
         message: 'This account is already linked to another user',
       });

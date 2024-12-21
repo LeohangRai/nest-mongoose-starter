@@ -64,7 +64,7 @@ async function bootstrap() {
     mongoose.set('debug', { shell: true, color: true });
   }
 
-  const port = configService.get<number>('app.port') || 3000;
+  const port = configService.get<number>('app.port') || 7000;
   const logger = new Logger('NestApplication');
   await app.listen(port, () => {
     logger.log(`Server is up and running at http://localhost:${port}`);

@@ -33,6 +33,13 @@ export class RegisterUserDto {
   })
   username: string;
 
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  displayName: string;
+
   @ApiProperty({
     format: 'email',
   })

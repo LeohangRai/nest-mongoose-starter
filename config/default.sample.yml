@@ -1,5 +1,6 @@
 app:
-  port: # 3000 by default
+  url: # the base url of the app (default is http://localhost)
+  port: # 7000 by default
   env: # anything other than 'production' will be treated as 'development'
 
 database:
@@ -34,3 +35,8 @@ rate_limit:
   login:
     ttl: # in milliseconds (default is 300000 ms, i.e. 5 minutes)
     limit: # number of requests (default is 5)
+
+oauth:
+  github:
+    client_id:
+    client_secret:
