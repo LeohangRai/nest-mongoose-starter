@@ -10,6 +10,7 @@ import * as cookieParser from 'cookie-parser';
 import * as basicAuth from 'express-basic-auth';
 import mongoose from 'mongoose';
 import { AppModule } from './app.module';
+import { DEFAULT_APP_CONFIG } from './common/configs/defaults';
 import {
   SWAGGER_CONFIG,
   SWAGGER_URL,
@@ -64,10 +65,11 @@ async function bootstrap() {
     mongoose.set('debug', { shell: true, color: true });
   }
 
-  const port = configService.get<number>('app.port') || 7000;
+  const port = configService.get<number>('app.port') || DEFAULT_APP_CONFIG.PORT;
+  const url = configService.get<string>('app.url') || DEFAULT_APP_CONFIG.URL;
   const logger = new Logger('NestApplication');
   await app.listen(port, () => {
-    logger.log(`Server is up and running at http://localhost:${port}`);
+    logger.log(`Server is up and running at ${url}`);
   });
 }
 bootstrap();

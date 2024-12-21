@@ -1,5 +1,5 @@
 app:
-  url: # the base url of the app (default is http://localhost)
+  url: # the base url of the app (default is http://localhost:7000)
   port: # 7000 by default
   env: # anything other than 'production' will be treated as 'development'
 

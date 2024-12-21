@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-github';
+import { DEFAULT_APP_CONFIG } from 'src/common/configs/defaults';
 import { AuthProvider } from 'src/common/enums/auth-provider.enum';
 import { UserWithTimestamps } from 'src/schemas/user.schema';
 import { OauthService } from '../oauth.service';
@@ -17,7 +18,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       clientSecret: configService.getOrThrow<string>(
         'oauth.github.client_secret',
       ),
-      callbackURL: `${configService.get('app.url') || 'http://localhost'}:${configService.get('app.port') || 7000}/oauth/github/callback`,
+      callbackURL: `${configService.get('app.url') || DEFAULT_APP_CONFIG.URL}/oauth/github/callback`,
       scope: ['public_profile'],
     });
   }
